@@ -8,7 +8,7 @@ command: "<sub-command>"      # use learn=true to discover sub-commands
 parameters: { ... }
 ```
 
-## Tier 1 — Daily NOC / Runbook Investigation
+## Tier 1 — Daily runbook investigation
 
 | Tool | What it does | When to use |
 |------|-------------|-------------|

@@ -73,7 +73,7 @@ def make_pages_response(pages, total=None, size=None, limit=50, start=0):
     }
 
 
-def make_space_response(key='NOC', name='NOC Operations'):
+def make_space_response(key='NOC', name='Demo Space'):
     return {
         'key': key,
         'name': name,
@@ -155,7 +155,7 @@ def populated_data_dir(tmp_data_dir):
     # space.json
     space_dir = tmp_data_dir / 'spaces' / space_key
     (space_dir / 'space.json').write_text(json.dumps({
-        'key': 'NOC', 'name': 'NOC Operations',
+        'key': 'NOC', 'name': 'Demo Space',
         'description': 'Test space', 'homepage_id': '12345',
     }), encoding='utf-8')
 

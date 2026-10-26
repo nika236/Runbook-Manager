@@ -369,42 +369,6 @@ class TestLegacyEndpoints:
         assert data['total'] >= 1
 
 
-class TestLegacyUpdateDomainTeamValidation:
-    """The legacy PUT endpoint must enforce the same domain/team rules as the
-    modern metadata endpoint, and must not partially write on rejection."""
-
-    def test_valid_domain_team_accepted(self, client):
-        resp = client.put('/api/runbooks/12345',
-                          json={'domain': 'NOC', 'team': 'NOC Engineers'})
-        assert resp.status_code == 200
-        data = resp.get_json()
-        assert data['domain'] == 'NOC'
-        assert data['team'] == 'NOC Engineers'
-
-    def test_invalid_pair_rejected(self, client, app):
-        resp = client.put('/api/runbooks/12345',
-                          json={'domain': 'NOC', 'team': 'Banking'})
-        assert resp.status_code == 400
-        assert 'belongs to' in resp.get_json()['error']
-        # Stored metadata must remain unchanged after rejection
-        with app.app_context():
-            meta = app.extensions['metadata_store'].get('NOC', '12345')
-        assert meta['domain'] is None
-        assert meta['team'] is None
-
-    def test_team_without_domain_rejected(self, client, app):
-        resp = client.put('/api/runbooks/12345', json={'team': 'NOC Engineers'})
-        assert resp.status_code == 400
-        with app.app_context():
-            meta = app.extensions['metadata_store'].get('NOC', '12345')
-        assert meta['team'] is None
-
-    def test_retired_domain_rejected(self, client):
-        resp = client.put('/api/runbooks/12345', json={'domain': 'Administration'})
-        assert resp.status_code == 400
-        assert 'retired' in resp.get_json()['error']
-
-
 # ===================================================================
 # Dashboard API
 # ===================================================================

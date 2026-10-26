@@ -341,7 +341,7 @@ export default function Layout() {
         </div>
         {!collapsed && (
           <div className="flex-1 min-w-0">
-            <div className="font-semibold text-white text-sm tracking-tight">NOC Docs</div>
+            <div className="font-semibold text-white text-sm tracking-tight">Runbook Manager</div>
             {/* The sidebar is dark in both themes, so it cannot rely on `dark:`
                 variants for contrast; it uses the sidebar tokens directly. */}
             <div className="text-2xs text-sidebar-text">Documentation Platform</div>
@@ -489,7 +489,7 @@ export default function Layout() {
           >
             <Bars3Icon aria-hidden="true" className="h-5 w-5" />
           </button>
-          <div className="font-semibold text-slate-800 dark:text-slate-200 text-sm">NOC Docs</div>
+          <div className="font-semibold text-slate-800 dark:text-slate-200 text-sm">Runbook Manager</div>
           <div className="ml-auto flex items-center gap-1">
             <button
               type="button"

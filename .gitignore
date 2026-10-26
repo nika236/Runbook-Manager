@@ -23,6 +23,7 @@ tests/test_confluence_renderer.py
 tests/test_reader_corpus_smoke.py
 tests/test_corpus_verification.py
 tests/test_priority_extraction.py
+specs/sla-guard-agent-infra.spec
 
 # Python
 __pycache__/

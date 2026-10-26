@@ -17,7 +17,7 @@ export function Chip({ label, value, variant = 'neutral', icon: Icon, unset = fa
 }
 
 /**
- * What a NOC engineer needs before reading: urgency, ownership, and whether the
+ * What an on-call engineer needs before reading: urgency, ownership, and whether the
  * page can still be trusted.
  *
  * Missing values are stated explicitly ("Not set" / "Unassigned") rather than
