@@ -1,0 +1,221 @@
+---
+description: Local development setup, environment variables, and secrets contract for apps deployed via the platform
+alwaysApply: true
+---
+
+# Local Development and Secrets Rule
+
+All applications deployed via the platform must work locally without any Azure resources. See the `platform-resource-config` rule for which infrastructure resources are available and their specific setup instructions.
+
+## ⚠️ If this project has 3rd-party connections — MCP is STEP 0
+
+If the project includes any connection-specific rules (in `.cursor/rules/` for Cursor, or merged into `AGENTS.md` for Claude Code) or skill folders for a connection slug, it uses the VibeOps MCP server for local credentials. **Before** you run `npm run dev`, `pnpm dev`, `python manage.py runserver`, or any other dev command, you MUST follow the connection-specific rule for that slug.
+
+For BackOffice connections specifically, see `backoffice-api-rules.mdc` STEP 0 — credentials are loaded by `node scripts/vibeops-dev.mjs <slug>`, which itself spawns `npm run dev`. **Do NOT** call `mcp_vibeops_get_credentials` from the agent surface; **do NOT** shell-export `BACKOFFICE_*=...`; **do NOT** check whether `.cursor/mcp.json` exists in the project root as a precondition (the install script writes the user-global `~/.cursor/mcp.json`, not a project-local file — the project-local file is supposed to be absent).
+
+For Databricks (delegated) connections specifically, see `azure-databricks-delegated-connection.mdc` and the `databricks` skill — credentials are loaded the same way, by `node scripts/vibeops-dev.mjs <slug>` (which sets `DATABRICKS_*` in the dev-server child and spawns `npm run dev`). **Do NOT** call `mcp_vibeops_get_credentials` from the agent surface; **do NOT** shell-export `DATABRICKS_*=...`; **do NOT** use a Databricks PAT — the user's AAD token is the credential.
+
+For other connection types without a dedicated rule/script:
+
+1. Read the connection slugs from the project (check the connection-specific rules like `*-connection.mdc`, or call `mcp_vibeops_list_connections`).
+2. For each connection, call `mcp_vibeops_get_credentials` with that slug.
+3. Export the returned `client_id`, `client_secret`, and (when present) `tenant_id` as environment variables into the same shell you will run the dev server in.
+4. Only **after** credentials are exported, start the dev server.
+
+If env vars are missing and the dev server errors out, the fix is **always** to re-call MCP — never to add error handling, placeholder values, `.env` entries, or a "paste credentials" UI. See the connection-specific `*-connection.mdc` rule for the exact variable names to export.
+
+### If the MCP tools are not available in this session
+
+If you cannot see `mcp_vibeops_get_credentials` in your available tools, the VibeOps MCP server is not enabled in your IDE yet (Cursor requires a manual toggle the first time; Claude Code registers it via the installer). **Stop immediately** and show the user this exact message, then wait:
+
+> The VibeOps MCP server is not enabled. To enable it:
+>
+> **Cursor:**
+> 1. Open **Cursor Settings** (`Cmd+Shift+J` on Mac, `Ctrl+Shift+J` on Windows).
+> 2. Go to **Tools & MCPs** (or **Features → MCP Servers**).
+> 3. Find `vibeops` and toggle it **ON**.
+> 4. Wait for the green dot / "Connected" status.
+>
+> **Claude Code:**
+> 1. Run `claude mcp list` in this folder to confirm `vibeops` is registered.
+> 2. If it is missing, re-run `bash Install.command` (macOS) / `Install.bat` (Windows).
+>
+> Then come back here and say **"retry"** — I will fetch credentials and start the dev server.
+>
+> Without MCP enabled, I cannot access your OAuth credentials and local login will not work.
+
+Do **not** proceed by writing placeholder values, adding a "paste credentials" UI, or creating `.env` entries by hand.
+
+## Port Configuration (CRITICAL)
+
+Local development and production use **different ports**:
+
+| Environment | Port | Why |
+|-------------|------|-----|
+| **Local development** | **4747** | Dedicated VibeOps dev port — avoids conflicts with common ports (3000, 5000, 8080). OAuth callback URLs are registered for `http://localhost:4747`. |
+| **Production (Container App)** | **5000** | Platform standard for all deployed Container Apps. Set via `ENV PORT=5000` in Dockerfile. |
+
+Your application code MUST read the port from `process.env.PORT`:
+
+- Node.js: `const PORT = process.env.PORT || 4747`
+- Python: `port = int(os.environ.get("PORT", 4747))`
+
+For local development, either leave `PORT` unset (defaults to 4747) or set `PORT=4747` in `.env.local`. The Dockerfile sets `PORT=5000` for production — do NOT hardcode 5000 in application code.
+
+## Environment Variable Contract
+
+Application code must read all configuration through environment variables. Never call Azure Key Vault SDK, Azure SDK, or any secrets management API at runtime.
+
+- Read all secrets and config from `process.env` (Node.js) or `os.environ` (Python)
+- Never import or call `@azure/keyvault-secrets`, `SecretClient`, or any Key Vault SDK in application code
+- The platform injects all secrets into the Container App environment before startup — the app does not need to fetch them
+- Local development uses `.env.local` (or equivalent) to supply the same variable names with local values
+- See the `platform-resource-config` rule for the full list of platform-managed variables
+
+### Custom Environment Variables
+
+Any env var the app needs beyond the platform-managed ones (e.g. `OPENAI_API_KEY`, `STRIPE_SECRET_KEY`, `SLACK_WEBHOOK_URL`) is a custom variable.
+
+How custom variables work:
+
+1. Document every custom variable in `.env.example` with a comment explaining its purpose
+2. On deploy, the platform parses `.env.example` and identifies variables that are not platform-managed
+3. If new custom variables are found, the deploy UI shows an "Environment Secrets" modal prompting for production values
+4. Values are stored securely in the project Azure Key Vault and injected into the Container App as environment variables
+5. At runtime, the app reads them as normal env vars (e.g. `process.env.OPENAI_API_KEY`)
+
+Constraints:
+
+- Maximum 50 custom env vars per deployment
+- Variable names must match `^[A-Za-z_][A-Za-z0-9_]*$`
+- On re-deploy, only new variables trigger the modal — existing secrets are left untouched
+- The user can skip the modal and add secrets later via the Key Vault management UI
+
+## Required Files
+
+### `.env.example` (always generate — always commit)
+
+Every repository must contain `.env.example` at the root. It documents every environment variable the app reads with placeholder values and comments. Never put real secrets in this file.
+
+Generate it with exactly the variables your app reads. Platform-managed variables should be included with comments explaining they are set automatically:
+
+```
+# ── Platform-managed (set automatically on deploy — do not provide in custom secrets) ──
+
+# Add platform-managed variables here based on enabled resources
+# See platform-resource-config rule for which variables apply
+
+# Host and port
+# Local dev uses 4747; production Container App uses 5000 (set by Dockerfile)
+HOST=0.0.0.0
+PORT=4747
+
+# ── Custom variables (you will be prompted for production values on deploy) ──
+
+# Add all other env vars your app reads below with a comment explaining each
+# OPENAI_API_KEY=        # Your OpenAI key
+# STRIPE_SECRET_KEY=     # Stripe secret key
+```
+
+Update `.env.example` in the same change whenever you add, rename, or remove an environment variable.
+
+### `HOST=0.0.0.0` is a bind address, NOT a browse address
+
+`0.0.0.0` tells the server to listen on all interfaces (required so the Container Apps ingress can reach it in prod) — it is **not** a hostname you can open in a browser. When you log the dev URL, print `http://localhost:${PORT}` (normalize `0.0.0.0` → `localhost`), e.g. `` const shown = host === "0.0.0.0" ? "localhost" : host; console.log(`listening on http://${shown}:${port}`) ``. **Never emit `http://0.0.0.0:<port>` as a clickable link.** The redirect URI is derived from the request `Host` header, so opening `http://0.0.0.0:<port>` makes the app send `http://0.0.0.0:<port>/api/auth/callback/...` to Entra — which is not a registered redirect URI (only `localhost`/`127.0.0.1`/`127.0.0.2` are), failing with `AADSTS50011`. Always sign in from `http://localhost:<port>`.
+
+### NEVER put `BASE_URL` (or any localhost URL) in `.env.example`
+
+The platform's deploy flow parses `.env.example`, treats every entry that is not platform-managed as a "custom secret", stores it in Key Vault prefixed `env-...`, and binds it onto the Container App as a `secretRef` env var. **Whatever value the agent typed into `.env.example` becomes the live env var in production.** A `BASE_URL=http://localhost:5000` in `.env.example` therefore turns the deployed Container App into a localhost-redirect machine — every code path that builds `redirectUri: \`${BASE_URL}/api/auth/callback/...\`` produces `http://localhost:5000/api/auth/callback/...` in prod, and Entra/Google/Salesforce reject it with `redirect_uri mismatch` or `AADSTS50011`.
+
+**Rules:**
+
+- Do NOT add `BASE_URL` (or any `*_BASE_URL` that is the *self*-FQDN) to `.env.example`. Derive it per-request from `X-Forwarded-Host` / `X-Forwarded-Proto` (with `app.set("trust proxy", true)`); see the connection rules / skills (`backoffice-api-rules` + `.cursor/skills/backoffice-api/lib/auth/buildRedirectUri.ts`, `azure-entra-delegated-connection`, `gmail-connection`, `salesforce-connection`, `azure-databricks-delegated-connection`) for the canonical `buildRedirectUri(req, callbackPath)` helper.
+- DO put **target API** base URLs (`BACKOFFICE_API_BASE_URL`, `INTERNAL_API_BASE_URL`, etc.) in `.env.example` — those are different services with stable public hostnames, not the self-FQDN.
+- If a non-OAuth code path genuinely needs `BASE_URL` (e.g. a webhook URL printed in an admin email), gate it behind `!isEasyAuth(req)` so prod never reads it.
+
+### `.env.local` (never commit — always add to `.gitignore`)
+
+Generate a `.gitignore` that excludes all env files with real values and local database files:
+
+```
+.env
+.env.local
+.env*.local
+*.env
+dev.db
+dev.db-journal
+*.db
+*.db-journal
+data/
+data/app-secrets.json
+```
+
+Requirements:
+
+- Never commit `.env.local` or any file containing real secrets
+- Never commit `dev.db` or any SQLite database file
+- Never commit `*.db-journal` files
+- Never commit `data/app-secrets.json` — this is the local Key Vault fallback file for development
+
+## `README.md` — Local Development Section (Mandatory)
+
+Every generated repository **must** include a "Local Development" section in `README.md` that explains exactly how to run the app locally. Non-technical users must be able to follow it.
+
+Minimum required content:
+
+```markdown
+## Local Development
+
+### Prerequisites
+
+- Node.js 20 (or Python 3.12)
+- Git
+- Cursor or Claude Code with the VibeOps MCP server configured (registered by the project installer)
+
+### Setup
+
+1. Clone the repository
+2. Copy the example env file and fill in your local values:
+   ```bash
+   cp .env.example .env.local
+   ```
+3. Install dependencies:
+   ```bash
+   npm install
+   ```
+4. Start the app:
+   ```bash
+   npm run dev
+   ```
+
+The app runs at **http://localhost:4747** (VibeOps dev port).
+
+> **Note:** Platform-managed variables are set automatically when you deploy.
+> You do not need Azure access to develop locally.
+
+### MCP and Connection Credentials
+
+If this project uses 3rd-party connections (OAuth integrations), credentials are provided automatically by the **VibeOps MCP server** configured for your IDE (Cursor or Claude Code) by the project installer. The AI agent will:
+
+1. Call `get_credentials` with the connection slug to fetch `client_id`, `client_secret`, and (for Azure AD connections) `tenant_id`
+2. Export those values as environment variables in the same shell running the dev server — for example:
+   - `BACKOFFICE_CLIENT_ID` ← `client_id`
+   - `BACKOFFICE_CLIENT_SECRET` ← `client_secret`
+   - `AZURE_TENANT_ID` ← `tenant_id`
+3. Never write credentials to `.env`, `.env.local`, or any file — they stay in memory only
+4. Never substitute a placeholder tenant ID (e.g. `11111111-1111-...`, `common`, `organizations`) — always use the exact `tenant_id` returned by MCP
+
+If the dev environment restarts, the agent re-fetches credentials from MCP automatically.
+```
+
+Adapt the commands to the actual language and framework being used.
+
+## Summary of Rules
+
+- Never call Azure SDK or Key Vault SDK in application code — the platform injects all secrets as env vars
+- Always generate `.env.example` — commit it; document every env var the app reads
+- Never commit `.env.local` or any file with real secret values
+- Never commit `dev.db`, `*.db`, or any local database files
+- Never commit `data/app-secrets.json` or the `data/` directory
+- Always document local setup in `README.md`
+- See the `platform-resource-config` rule for resource-specific local development setup (database, Redis, Key Vault)

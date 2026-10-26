@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "resources": {
+    "keyvault": {
+      "enabled": true,
+      "reason": "Stores Confluence API token and other secrets injected as environment variables at runtime"
+    }
+  }
+}

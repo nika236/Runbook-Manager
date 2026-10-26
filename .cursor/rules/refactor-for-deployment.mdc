@@ -1,0 +1,253 @@
+---
+description: Step-by-step guide for refactoring an existing codebase to be deployable on the Azure Container Apps platform (Node.js and Python only)
+alwaysApply: true
+---
+
+# Refactor Existing App for Deployment
+
+This rule guides you through making an existing codebase compliant with the platform's deployment requirements. Follow every phase in order. Report findings before making changes. Do not skip phases.
+
+Only **Node.js** and **Python** applications are supported. See the `platform-resource-config` rule for supported runtimes and infrastructure resources.
+
+## Phase 1: Code Scan and Analysis
+
+Before making any changes, scan the codebase and produce a summary.
+
+### 1.1 Detect Runtime and Language
+
+Identify the project's runtime from its dependency file:
+
+| File found | Runtime |
+|------------|---------|
+| `package.json` | Node.js |
+| `requirements.txt` or `pyproject.toml` or `setup.py` | Python |
+
+If the project uses a runtime other than Node.js or Python, **stop** — the platform does not support it. See the `platform-resource-config` rule for the full list of unsupported runtimes.
+
+### 1.2 Scan for Hardcoded Secrets
+
+Search all source files for hardcoded secrets. Check for:
+
+**String patterns that indicate secrets:**
+- API keys: `sk-`, `pk_live_`, `pk_test_`, `rk_live_`, `xoxb-`, `xoxp-`, `ghp_`, `gho_`, `github_pat_`
+- Connection strings: `mongodb+srv://`, `postgres://`, `mysql://`, `redis://`, `rediss://`, `Server=`, `Data Source=`, `sqlserver://`
+- Tokens: `Bearer `, `Basic `, `eyJ` (JWT prefix)
+- Azure: `DefaultEndpointsProtocol=`, `AccountKey=`, `SharedAccessSignature=`
+- Generic: strings longer than 20 characters assigned to variables named `*_KEY`, `*_SECRET`, `*_TOKEN`, `*_PASSWORD`, `*_CREDENTIAL`, `*_API_KEY`
+
+**Locations to check:**
+- Source code files (`.ts`, `.js`, `.py`)
+- Config files (`config.json`, `config.yaml`, `config.yml`)
+- Constructor arguments and object literals with credential-like values
+- HTTP headers with hardcoded Authorization values
+- Docker `ENV` and `ARG` instructions with secret values
+
+**Locations to skip:**
+- `.cursor/`, `.specify/`, `specs/`, `docs/` directories
+- `.md`, `.mdc`, `.spec`, `.txt` files
+- `README.md`, `AGENTS.md`, `infra-manifest.json`
+- Lock files (`package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`)
+- Test fixtures with obviously fake values
+
+### 1.3 Scan for Platform-Managed Variable Aliases
+
+The platform injects specific env vars at runtime. Scan for aliases that need renaming:
+
+| Platform standard name | Common aliases to scan for |
+|------------------------|---------------------------|
+| `PORT` | `APP_PORT`, `SERVER_PORT`, `HTTP_PORT`, `LISTEN_PORT` |
+| `HOST` | `APP_HOST`, `SERVER_HOST`, `BIND_ADDRESS`, `LISTEN_HOST` |
+
+For resource-specific variable aliases (`DATABASE_URL`, `REDIS_URL`, `AZURE_KV_URL`), see the `platform-resource-config` rule for which resources are supported.
+
+### 1.4 Scan for Infrastructure Signals
+
+Detect which Azure resources the app needs. Consult the `platform-resource-config` rule for the list of supported resources. Only scan for signals related to supported resources.
+
+### 1.5 Scan for Existing Env Var Usage
+
+Find all environment variable references in the codebase:
+- Node.js: `process.env.VARIABLE_NAME`
+- Python: `os.environ["VARIABLE_NAME"]`, `os.environ.get("VARIABLE_NAME")`, `os.getenv("VARIABLE_NAME")`
+
+Collect the full list — these all need to be documented in `.env.example`.
+
+### 1.6 Report Before Proceeding
+
+Before making any changes, produce a summary:
+
+```
+## Scan Results
+
+**Runtime:** [detected runtime]
+**Hardcoded secrets found:** [count] in [list of files]
+**Platform variable aliases found:** [list]
+**Infrastructure signals:** [list, limited to supported resources]
+**Environment variables referenced:** [list]
+**Existing Dockerfile:** [yes/no]
+**Existing .dockerignore:** [yes/no]
+**Existing health endpoint:** [yes/no]
+**Existing infra-manifest.json:** [yes/no]
+**Current port:** [detected port or unknown]
+```
+
+Wait for confirmation before proceeding to Phase 2.
+
+---
+
+## Phase 2: Secrets Extraction and Variable Normalization
+
+### 2.1 Rename Platform Variable Aliases
+
+Rename all non-standard names for platform-managed variables to the platform standard name. See Phase 1.3 for the base aliases. For resource-specific aliases, see the `platform-resource-config` rule.
+
+### 2.2 Replace Hardcoded Secrets with Env Vars
+
+For every hardcoded secret found in Phase 1:
+
+1. Choose a descriptive env var name following `UPPER_SNAKE_CASE` convention
+2. Replace the hardcoded value with an env var read:
+   - Node.js: `process.env.OPENAI_API_KEY`
+   - Python: `os.environ.get("OPENAI_API_KEY", "")`
+3. If the secret is used in multiple places, extract it to a single config module
+4. Add validation at startup if the variable is required
+
+### 2.3 Generate `.env.example`
+
+See the `local-dev-and-migrations` rule for the `.env.example` format. Include both platform-managed variables (for supported resources) and custom variables.
+
+### 2.4 Generate `.env.local`
+
+Create `.env.local` with the actual extracted secret values for local development. This file must never be committed.
+
+### 2.5 Update `.gitignore`
+
+Ensure `.gitignore` contains:
+
+```
+.env
+.env.local
+.env*.local
+*.env
+dev.db
+dev.db-journal
+*.db
+*.db-journal
+```
+
+### 2.6 Verify Extraction
+
+Search the codebase again for the patterns from Phase 1.2. Confirm zero hardcoded secrets remain.
+
+---
+
+## Phase 3: Infrastructure Manifest
+
+### 3.1 Generate `infra-manifest.json`
+
+Create `infra-manifest.json` at the repository root based on Phase 1 scan results. See the `platform-resource-config` rule for the required manifest shape and which resources are supported.
+
+Only include resources that the `platform-resource-config` rule lists as supported. Do not add unsupported resources.
+
+### 3.2 Validate the Manifest
+
+Verify the manifest matches what the code actually uses. The platform scans uploaded code for resource signals and rejects the deployment if the code uses a resource that the manifest does not enable.
+
+---
+
+## Phase 4: Dockerfile and Container Config
+
+### 4.1 Dockerfile
+
+**If no Dockerfile exists:** Generate one using the approved template for the detected runtime. See the `azure-container-apps-standards` rule for the exact Dockerfile.
+
+**If a Dockerfile already exists:** Validate and fix each requirement:
+
+| Requirement | Check | Fix |
+|-------------|-------|-----|
+| Multi-stage build | At least two `FROM` instructions | Split into `builder` and `runner` stages |
+| Approved base image | Image matches the approved list | Replace with the approved image |
+| Non-root user | `USER` instruction in runner stage | Add `adduser`/`useradd` + `USER appuser` |
+| Port 5000 | `EXPOSE 5000` present | Replace any other port with 5000 |
+| Port env var | `ENV PORT=5000` present | Add it |
+| Host binding | `ENV HOST=0.0.0.0` present | Add it |
+| Entrypoint | Uses `entrypoint.sh` when `db` enabled | Replace `CMD` with `CMD ["./entrypoint.sh"]` |
+
+### 4.2 `.dockerignore`
+
+See the `azure-container-apps-standards` rule for required `.dockerignore` entries.
+
+### 4.3 `entrypoint.sh` (when `db` is enabled)
+
+If the `platform-resource-config` rule supports database and `db` is enabled in the manifest, generate `entrypoint.sh`. See the `platform-resource-config` rule for entrypoint patterns per runtime.
+
+---
+
+## Phase 5: Application Adaptations
+
+### 5.1 Port Configuration
+
+The **Dockerfile** must set port **5000** (production Container App standard). Application code must read the port from `process.env.PORT` with a **local dev default of 4747**:
+
+| Framework | Where to change | Application code | Dockerfile |
+|-----------|----------------|------------------|------------|
+| Express (Node.js) | `app.listen(PORT)` | `const PORT = process.env.PORT \|\| 4747` | `ENV PORT=5000` |
+| Next.js | `package.json` scripts | Use `PORT` env var | `ENV PORT=5000` |
+| FastAPI (Python) | `uvicorn` command | `--host 0.0.0.0 --port ${PORT:-4747}` | `ENV PORT=5000` |
+| Flask (Python) | `app.run()` | `port=int(os.environ.get("PORT", 4747))` | `ENV PORT=5000` |
+
+Local development runs on port **4747** (dedicated VibeOps dev port). The Dockerfile overrides to 5000 for production.
+
+### 5.2 Health Endpoint
+
+The app must expose `/health` or `/api/health` that returns HTTP 200 with no authentication required. See the `azure-container-apps-standards` rule for examples.
+
+### 5.3 Resource-Specific Adaptations
+
+For database, Redis, and Key Vault adaptations, see the `platform-resource-config` rule. Only apply adaptations for resources that are supported by the platform.
+
+---
+
+## Phase 6: README and Documentation
+
+### 6.1 `README.md`
+
+The `README.md` must contain these sections:
+
+1. **Project Overview** — what the app does
+2. **Tech Stack** — table of runtime, framework, dependencies
+3. **Flow Diagram** — Mermaid diagram of architecture
+4. **Project Owner** — team, primary contact, escalation contact
+5. **Local Development** — prerequisites, setup, how to run locally
+
+See the `azure-container-apps-standards` rule for README format and the `local-dev-and-migrations` rule for the Local Development section template.
+
+---
+
+## Phase 7: Validation Checklist
+
+### Repository Files
+
+- [ ] `infra-manifest.json` exists and is valid (only supported resources)
+- [ ] `Dockerfile` exists, uses approved base image, multi-stage build, non-root user, port 5000
+- [ ] `.dockerignore` exists and excludes local artifacts
+- [ ] `.env.example` exists and documents every env var
+- [ ] `.gitignore` excludes `.env.local`, `*.env`, `dev.db`
+- [ ] `README.md` has all required sections
+- [ ] `entrypoint.sh` exists if `db` is enabled (not present if `db` is disabled)
+
+### Application Code
+
+- [ ] No hardcoded secrets in source code
+- [ ] Only platform standard variable names used
+- [ ] App reads port from `PORT` env var (defaults to 4747 for local dev; Dockerfile sets 5000 for production)
+- [ ] App binds to `0.0.0.0`
+- [ ] Health endpoint returns 200 with no auth
+- [ ] All configuration read from environment variables
+- [ ] No Azure Key Vault SDK calls for secrets
+
+### Manifest Consistency
+
+- [ ] Manifest only contains resources supported by the platform
+- [ ] If code uses a resource, it is enabled in the manifest
+- [ ] Resource dependency rules are satisfied (see `platform-resource-config` rule)

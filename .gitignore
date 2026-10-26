@@ -1,0 +1,53 @@
+# Secrets and local env
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+*.p12
+
+# Synced corpus, org mapping, and audit tooling.
+# Company operational content stays on this machine.
+data/
+corpus_render_report.json
+app/config/domain_teams.json
+app/config/exclusions.json
+app/services/classification_service.py
+app/services/team_classifier.py
+scripts/
+tests/test_classification.py
+tests/test_domain_teams.py
+tests/test_exclusions.py
+tests/test_confluence_renderer.py
+tests/test_reader_corpus_smoke.py
+tests/test_corpus_verification.py
+tests/test_priority_extraction.py
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+.coverage
+htmlcov/
+
+# Node
+node_modules/
+frontend/node_modules/
+frontend/dist/
+
+# Logs and local QA artifacts
+*.log
+qa-screenshots/
+
+# Local snapshots
+_backups_*/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp

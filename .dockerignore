@@ -1,0 +1,48 @@
+# Version control
+.git
+.gitignore
+
+# Docs / local artifacts
+README.md
+*.log
+.DS_Store
+PROJECT-CONTEXT.md
+
+# Node.js
+frontend/node_modules
+frontend/.cache
+
+# Python
+__pycache__
+*.pyc
+.venv
+venv
+
+# Env and secrets
+.env
+.env.local
+.env*.local
+*.env
+!.env.example
+
+# Local data
+data/
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+
+# Test / coverage
+.coverage
+.pytest_cache/
+htmlcov/
+
+# VibeOps local
+.cursor/
+.specify/
+.vibeops-helpers/
+.git-hooks/
+specs/
+Install.ps1
+Install.bat

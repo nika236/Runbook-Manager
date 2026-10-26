@@ -1,0 +1,1559 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-brand: 99 102 241;
+    --color-success: 16 185 129;
+    --color-warning: 245 158 11;
+    --color-danger: 239 68 68;
+    --color-info: 14 165 233;
+    --radius-card: 0.75rem;
+    --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.04), 0 1px 2px -1px rgb(0 0 0 / 0.04);
+
+    /* ── Semantic reader tokens ──
+       Every imported-content and page-detail colour resolves through these, so
+       no component hardcodes a page-specific light/dark pair. Contrast targets:
+       --rd-text >= 7:1 on --rd-canvas, --rd-text-secondary >= 4.5:1,
+       --rd-text-muted >= 4.5:1, borders >= 3:1 where they carry meaning. */
+    --rd-canvas: #f8fafc;
+    --rd-surface: #ffffff;
+    --rd-surface-raised: #f1f5f9;
+    --rd-border: #dbe2ea;
+    --rd-border-strong: #94a3b8;
+    --rd-text: #0f172a;
+    --rd-text-secondary: #475569;
+    --rd-text-muted: #5b6878;
+    --rd-link: #4338ca;
+    --rd-link-hover: #312e81;
+    --rd-link-visited: #6d28d9;
+    --rd-focus: #4f46e5;
+    --rd-code-bg: #f1f5f9;
+    --rd-code-text: #0f172a;
+    --rd-block-bg: #0f172a;
+    --rd-block-text: #e8edf5;
+
+    /* Status families: background / border / text, all contrast-checked. */
+    --rd-info-bg: #eff6ff;
+    --rd-info-border: #2563eb;
+    --rd-info-text: #16325c;
+    --rd-note-bg: #f5f3ff;
+    --rd-note-border: #7c3aed;
+    --rd-note-text: #2e1065;
+    --rd-success-bg: #ecfdf5;
+    --rd-success-border: #059669;
+    --rd-success-text: #064e3b;
+    --rd-warning-bg: #fffbeb;
+    --rd-warning-border: #d97706;
+    --rd-warning-text: #5c3a04;
+    --rd-danger-bg: #fef2f2;
+    --rd-danger-border: #dc2626;
+    --rd-danger-text: #7f1d1d;
+    --rd-neutral-bg: #f1f5f9;
+    --rd-neutral-border: #94a3b8;
+    --rd-neutral-text: #1e293b;
+
+    /* ── Typography scale (rem, 8px spacing rhythm) ── */
+    --rd-fs-page-title: 1.75rem;   /* 28px */
+    --rd-lh-page-title: 2rem;      /* 32px */
+    --rd-fs-section: 1.5rem;       /* 24px */
+    --rd-lh-section: 1.75rem;      /* 28px */
+    --rd-fs-subsection: 1.25rem;   /* 20px */
+    --rd-lh-subsection: 1.5rem;    /* 24px */
+    --rd-fs-minor: 1rem;           /* 16px */
+    --rd-fs-body: 1rem;            /* 16px — article body */
+    --rd-lh-body: 1.5;             /* 24px */
+    --rd-fs-meta: 0.875rem;        /* 14px */
+    --rd-lh-meta: 1.25rem;         /* 20px */
+    --rd-fs-fine: 0.75rem;         /* 12px — nonessential fine print only */
+
+    /* ── Reader layout ── */
+    --rd-shell-max: 80rem;         /* 1280px */
+    --rd-article-max: 52.5rem;     /* 840px */
+    --rd-measure: 72ch;
+    --rd-rail: 17.5rem;            /* 280px */
+    --rd-gap: 2.5rem;              /* 40px */
+    --rd-sticky-offset: 1.5rem;
+  }
+
+  .dark {
+    --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.2), 0 1px 2px -1px rgb(0 0 0 / 0.15);
+    color-scheme: dark;
+
+    --rd-canvas: #0f172a;
+    --rd-surface: #1a2335;
+    --rd-surface-raised: #222d42;
+    --rd-border: #33415a;
+    --rd-border-strong: #64748b;
+    --rd-text: #f1f5f9;
+    --rd-text-secondary: #c2ccd9;
+    --rd-text-muted: #a4b1c2;
+    --rd-link: #a5b4fc;
+    --rd-link-hover: #c7d2fe;
+    --rd-link-visited: #c4b5fd;
+    --rd-focus: #a5b4fc;
+    --rd-code-bg: #263149;
+    --rd-code-text: #e8edf5;
+    --rd-block-bg: #0b1220;
+    --rd-block-text: #e8edf5;
+
+    --rd-info-bg: #16284d;
+    --rd-info-border: #60a5fa;
+    --rd-info-text: #d8e6ff;
+    --rd-note-bg: #2a2150;
+    --rd-note-border: #a78bfa;
+    --rd-note-text: #e6dcff;
+    --rd-success-bg: #10352c;
+    --rd-success-border: #34d399;
+    --rd-success-text: #ccf5e4;
+    --rd-warning-bg: #3b2a0c;
+    --rd-warning-border: #fbbf24;
+    --rd-warning-text: #fbeecb;
+    --rd-danger-bg: #401a1c;
+    --rd-danger-border: #f87171;
+    --rd-danger-text: #fbdcdc;
+    --rd-neutral-bg: #222d42;
+    --rd-neutral-border: #64748b;
+    --rd-neutral-text: #e2e8f0;
+  }
+
+  html {
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+
+  body {
+    @apply bg-surface-50 text-slate-800 antialiased;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+      Oxygen, Ubuntu, Cantarell, sans-serif;
+  }
+
+  .dark body {
+    @apply bg-slate-900 text-slate-200;
+  }
+}
+
+@layer components {
+  /* ── Cards ── */
+  .card {
+    @apply bg-white rounded-xl border border-slate-200/80 shadow-card;
+  }
+  .dark .card {
+    @apply bg-slate-800 border-slate-700/60;
+  }
+
+  .card-hover {
+    @apply card hover:shadow-card-hover hover:border-slate-200 transition-all duration-150;
+  }
+  .dark .card-hover {
+    @apply hover:border-slate-600;
+  }
+
+  .kpi-card {
+    @apply card p-5;
+  }
+
+  /* ── Typography ── */
+  .page-title {
+    @apply text-xl font-semibold text-slate-900 tracking-tight;
+  }
+  .dark .page-title {
+    @apply text-slate-100;
+  }
+
+  .section-title {
+    @apply text-sm font-semibold text-slate-900;
+  }
+  .dark .section-title {
+    @apply text-slate-100;
+  }
+
+  .caption {
+    @apply text-xs text-slate-500;
+  }
+  .dark .caption {
+    @apply text-slate-400;
+  }
+
+  .label {
+    @apply text-2xs font-medium uppercase tracking-wider text-slate-400;
+  }
+  .dark .label {
+    @apply text-slate-500;
+  }
+
+  /* ── Inputs ── */
+  .input-field {
+    @apply w-full text-sm border border-slate-200 rounded-lg px-3 py-2
+           bg-white placeholder-slate-400
+           focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500
+           transition-colors duration-150;
+  }
+  .dark .input-field {
+    @apply bg-slate-800 border-slate-600 text-slate-200 placeholder-slate-500
+           focus:ring-brand-400/30 focus:border-brand-400;
+  }
+
+  /* ── Buttons ── */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium
+           text-white bg-brand-600 rounded-lg
+           hover:bg-brand-700 active:bg-brand-800
+           focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:ring-offset-1
+           transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .dark .btn-primary {
+    @apply bg-brand-500 hover:bg-brand-400 focus:ring-offset-slate-900;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium
+           text-slate-700 bg-white border border-slate-200 rounded-lg
+           hover:bg-slate-50 active:bg-slate-100
+           focus:outline-none focus:ring-2 focus:ring-slate-500/20 focus:ring-offset-1
+           transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .dark .btn-secondary {
+    @apply text-slate-300 bg-slate-800 border-slate-600
+           hover:bg-slate-700 active:bg-slate-600
+           focus:ring-offset-slate-900;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-3 py-1.5 text-sm font-medium
+           text-slate-600 rounded-lg
+           hover:bg-slate-100 active:bg-slate-200
+           focus:outline-none focus:ring-2 focus:ring-slate-500/20
+           transition-all duration-150;
+  }
+  .dark .btn-ghost {
+    @apply text-slate-400 hover:bg-slate-700 active:bg-slate-600;
+  }
+
+  /* ── Badges ── */
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 text-2xs font-medium rounded-full;
+  }
+
+  .badge-blue {
+    @apply badge bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-600/10;
+  }
+  .dark .badge-blue {
+    @apply bg-blue-900/40 text-blue-300 ring-blue-400/20;
+  }
+
+  .badge-green {
+    @apply badge bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/10;
+  }
+  .dark .badge-green {
+    @apply bg-emerald-900/40 text-emerald-300 ring-emerald-400/20;
+  }
+
+  .badge-amber {
+    @apply badge bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/10;
+  }
+  .dark .badge-amber {
+    @apply bg-amber-900/40 text-amber-300 ring-amber-400/20;
+  }
+
+  .badge-red {
+    @apply badge bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/10;
+  }
+  .dark .badge-red {
+    @apply bg-red-900/40 text-red-300 ring-red-400/20;
+  }
+
+  .badge-slate {
+    @apply badge bg-slate-100 text-slate-600 ring-1 ring-inset ring-slate-500/10;
+  }
+  .dark .badge-slate {
+    @apply bg-slate-700 text-slate-300 ring-slate-500/20;
+  }
+
+  .badge-purple {
+    @apply badge bg-violet-50 text-violet-700 ring-1 ring-inset ring-violet-600/10;
+  }
+  .dark .badge-purple {
+    @apply bg-violet-900/40 text-violet-300 ring-violet-400/20;
+  }
+
+  .badge-brand {
+    @apply badge bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-600/10;
+  }
+  .dark .badge-brand {
+    @apply bg-brand-900/40 text-brand-300 ring-brand-400/20;
+  }
+
+  .dot {
+    @apply inline-block w-1.5 h-1.5 rounded-full flex-shrink-0;
+  }
+
+  /* ── Tables ── */
+  .table-header {
+    @apply text-2xs font-semibold uppercase tracking-wider text-slate-400 text-left py-3 px-4
+           border-b border-slate-100 bg-slate-50/50;
+  }
+  .dark .table-header {
+    @apply text-slate-500 border-slate-700 bg-slate-800/50;
+  }
+
+  .table-cell {
+    @apply py-3 px-4 text-sm text-slate-700 border-b border-slate-50;
+  }
+  .dark .table-cell {
+    @apply text-slate-300 border-slate-700/40;
+  }
+
+  .table-row-interactive {
+    @apply cursor-pointer hover:bg-brand-50/40 transition-colors duration-100;
+  }
+  .dark .table-row-interactive {
+    @apply hover:bg-brand-900/20;
+  }
+
+  /* ── States ── */
+  .empty-state {
+    @apply flex flex-col items-center justify-center py-12 text-center;
+  }
+
+  .loading-skeleton {
+    @apply animate-pulse bg-slate-100 rounded;
+  }
+  .dark .loading-skeleton {
+    @apply bg-slate-700;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar-link {
+    @apply flex items-center gap-3 px-3 py-2 rounded-lg text-[13px] font-medium
+           text-sidebar-text hover:text-sidebar-text-active hover:bg-sidebar-hover
+           transition-colors duration-150;
+  }
+
+  .sidebar-link-active {
+    @apply text-white bg-white/10;
+  }
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-200 rounded-full;
+}
+.dark ::-webkit-scrollbar-thumb {
+  @apply bg-slate-700;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-300;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-600;
+}
+
+/* =====================================================================
+   READER SHELL
+   The page-detail experience: breadcrumbs, compact header, measured
+   article column, sticky right rail, then attachments and revisions.
+   ===================================================================== */
+
+.rd-visually-hidden,
+.cf-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Skip link — hidden until focused, then clearly visible. */
+.rd-skip-link {
+  position: absolute;
+  left: 0.75rem;
+  top: -3rem;
+  z-index: 60;
+  padding: 0.5rem 0.875rem;
+  border-radius: 0.5rem;
+  font-size: var(--rd-fs-meta);
+  font-weight: 600;
+  color: #ffffff;
+  background-color: var(--rd-focus);
+  transition: top 0.15s ease-out;
+}
+.rd-skip-link:focus {
+  top: 0.75rem;
+}
+
+.rd-shell {
+  max-width: var(--rd-shell-max);
+  margin: 0 auto;
+}
+
+/* Article + right rail. Only one scroll container exists (the app shell);
+   the article itself never scrolls independently.
+
+   The second column is driven by the measured shell width (see
+   useContainerWidth), not a viewport media query, because the 240px app
+   navigation means a 1280px viewport offers only ~976px to the reader. */
+.rd-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--rd-gap);
+  align-items: start;
+}
+
+.rd-layout[data-rail='true'] {
+  grid-template-columns: minmax(0, 1fr) var(--rd-rail);
+}
+
+.rd-main {
+  min-width: 0;
+  max-width: var(--rd-article-max);
+}
+
+.rd-rail {
+  min-width: 0;
+  position: sticky;
+  top: var(--rd-sticky-offset);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* ── Breadcrumbs ── */
+.rd-breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: var(--rd-fs-meta);
+  line-height: var(--rd-lh-meta);
+  color: var(--rd-text-secondary);
+}
+.rd-breadcrumb a {
+  color: var(--rd-text-secondary);
+  text-decoration: none;
+  border-radius: 0.25rem;
+  /* Truncation stays recoverable: the full title is in title/aria-label. */
+  max-width: 16rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  /* Crumbs are standalone links, so each one carries its own 24px target. */
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.5rem;
+}
+.rd-breadcrumb a:hover {
+  color: var(--rd-link);
+  text-decoration: underline;
+}
+.rd-breadcrumb-current {
+  color: var(--rd-text);
+  font-weight: 500;
+  max-width: 24rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rd-breadcrumb-sep {
+  color: var(--rd-text-muted);
+  flex-shrink: 0;
+}
+
+/* ── Page header ── */
+.rd-header {
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--rd-border);
+  margin-bottom: 1.5rem;
+}
+
+.rd-title {
+  font-size: var(--rd-fs-page-title);
+  line-height: var(--rd-lh-page-title);
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--rd-text);
+  margin: 0.75rem 0 0.5rem;
+  /* Long titles wrap; ordinary words are never broken mid-word. */
+  overflow-wrap: break-word;
+}
+
+.rd-byline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: var(--rd-fs-meta);
+  line-height: var(--rd-lh-meta);
+  color: var(--rd-text-secondary);
+}
+.rd-byline-sep {
+  color: var(--rd-text-muted);
+}
+
+.rd-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+/* ── Chips: classification + review flags ──
+   Each chip carries its own text, so colour is never the only signal. */
+.rd-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.875rem;
+}
+
+.rd-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 0.375rem;
+  font-size: var(--rd-fs-meta);
+  line-height: 1.25rem;
+  font-weight: 500;
+  border: 1px solid var(--rd-neutral-border);
+  background-color: var(--rd-neutral-bg);
+  color: var(--rd-neutral-text);
+  max-width: 100%;
+  overflow-wrap: break-word;
+}
+.rd-chip-key {
+  color: var(--rd-text-muted);
+  font-weight: 500;
+}
+.rd-chip-info    { border-color: var(--rd-info-border);    background-color: var(--rd-info-bg);    color: var(--rd-info-text); }
+.rd-chip-note    { border-color: var(--rd-note-border);    background-color: var(--rd-note-bg);    color: var(--rd-note-text); }
+.rd-chip-success { border-color: var(--rd-success-border); background-color: var(--rd-success-bg); color: var(--rd-success-text); }
+.rd-chip-warning { border-color: var(--rd-warning-border); background-color: var(--rd-warning-bg); color: var(--rd-warning-text); }
+.rd-chip-danger  { border-color: var(--rd-danger-border);  background-color: var(--rd-danger-bg);  color: var(--rd-danger-text); }
+.rd-chip-info .rd-chip-key    { color: var(--rd-info-text); opacity: 0.8; }
+.rd-chip-note .rd-chip-key    { color: var(--rd-note-text); opacity: 0.8; }
+.rd-chip-success .rd-chip-key { color: var(--rd-success-text); opacity: 0.8; }
+.rd-chip-warning .rd-chip-key { color: var(--rd-warning-text); opacity: 0.8; }
+.rd-chip-danger .rd-chip-key  { color: var(--rd-danger-text); opacity: 0.8; }
+.rd-chip-unset {
+  color: var(--rd-text-muted);
+  font-weight: 400;
+  font-style: italic;
+}
+.rd-chip-icon {
+  width: 0.875rem;
+  height: 0.875rem;
+  flex-shrink: 0;
+}
+
+/* ── Rail + section cards ── */
+.rd-panel {
+  border: 1px solid var(--rd-border);
+  border-radius: 0.75rem;
+  background-color: var(--rd-surface);
+  /* A panel must never widen the column it sits in, whatever its content. */
+  min-width: 0;
+}
+.rd-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: var(--rd-fs-meta);
+  line-height: var(--rd-lh-meta);
+  font-weight: 600;
+  color: var(--rd-text);
+  text-align: left;
+  background: none;
+  border: 0;
+  border-radius: 0.75rem;
+}
+.rd-panel-body {
+  padding: 0.25rem 1rem 1rem;
+}
+.rd-panel-count {
+  margin-left: auto;
+  font-size: var(--rd-fs-meta);
+  font-weight: 500;
+  color: var(--rd-text-muted);
+}
+
+/* Interactive disclosure header: whole row is the button. */
+button.rd-panel-head {
+  cursor: pointer;
+}
+button.rd-panel-head:hover {
+  background-color: var(--rd-surface-raised);
+}
+.rd-panel-chevron {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  color: var(--rd-text-muted);
+  transition: transform 0.15s ease-out;
+}
+button.rd-panel-head[aria-expanded='true'] > .rd-panel-chevron {
+  transform: rotate(180deg);
+}
+/* Leading section icon — decorative, must not inherit the chevron rotation. */
+.rd-panel-icon {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  color: var(--rd-text-muted);
+}
+
+/* ── Key/value details (semantic dl, not a layout table) ── */
+.rd-dl {
+  display: grid;
+  grid-template-columns: minmax(6rem, auto) minmax(0, 1fr);
+  column-gap: 0.875rem;
+  row-gap: 0.5rem;
+  margin: 0;
+  font-size: var(--rd-fs-meta);
+  line-height: var(--rd-lh-meta);
+}
+.rd-dl dt {
+  color: var(--rd-text-muted);
+  font-weight: 500;
+}
+.rd-dl dd {
+  margin: 0;
+  color: var(--rd-text);
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+.rd-dl dd.rd-unset {
+  color: var(--rd-text-muted);
+  font-style: italic;
+}
+.rd-dl dd.rd-mono {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: var(--rd-fs-fine);
+}
+
+/* ── Table of contents ── */
+.rd-toc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: var(--rd-fs-meta);
+  line-height: var(--rd-lh-meta);
+  max-height: min(60vh, 32rem);
+  overflow-y: auto;
+}
+.rd-toc-link {
+  display: block;
+  padding: 0.3125rem 0.5rem 0.3125rem 0.75rem;
+  border-left: 2px solid var(--rd-border);
+  color: var(--rd-text-secondary);
+  text-decoration: none;
+  overflow-wrap: break-word;
+}
+.rd-toc-link:hover {
+  color: var(--rd-link);
+  border-left-color: var(--rd-border-strong);
+  background-color: var(--rd-surface-raised);
+}
+.rd-toc-depth-3 { padding-left: 1.5rem; }
+.rd-toc-depth-4 { padding-left: 2.25rem; }
+/* Current section: weight + a left marker, not colour alone. */
+.rd-toc-link[aria-current='true'] {
+  color: var(--rd-text);
+  font-weight: 600;
+  border-left-width: 3px;
+  border-left-color: var(--rd-focus);
+  background-color: var(--rd-surface-raised);
+}
+
+/* ── Attachments ── */
+.rd-attachment {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.625rem 0;
+  border-top: 1px solid var(--rd-border);
+  font-size: var(--rd-fs-meta);
+  line-height: var(--rd-lh-meta);
+}
+.rd-attachment:first-child {
+  border-top: 0;
+}
+.rd-attachment-name {
+  color: var(--rd-text);
+  font-weight: 500;
+  /* `anywhere`, not `break-word`: only `anywhere` lowers the element's
+     min-content width, which is what stops a long filename (or a user
+     text-spacing override) from widening the whole column. */
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.rd-attachment-meta {
+  color: var(--rd-text-muted);
+  font-size: var(--rd-fs-fine);
+}
+/* 44x44 hit area for icon actions. */
+.rd-icon-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  flex-shrink: 0;
+  border-radius: 0.5rem;
+  color: var(--rd-text-secondary);
+  border: 1px solid transparent;
+}
+.rd-icon-action:hover {
+  color: var(--rd-link);
+  background-color: var(--rd-surface-raised);
+  border-color: var(--rd-border);
+}
+
+/* ── Revision history ── */
+.rd-revision {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 0.75rem;
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--rd-border);
+  font-size: var(--rd-fs-meta);
+  line-height: var(--rd-lh-meta);
+}
+.rd-revision:first-child {
+  border-top: 0;
+}
+.rd-revision-version {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--rd-text);
+}
+.rd-revision-author {
+  color: var(--rd-text);
+}
+.rd-revision-date,
+.rd-revision-message {
+  color: var(--rd-text-muted);
+}
+
+/* =====================================================================
+   IMPORTED CONFLUENCE CONTENT
+   Everything below is scoped to .confluence-content so application
+   resets can never flatten the article, and article styles can never
+   leak into the application chrome.
+   ===================================================================== */
+
+.confluence-content {
+  font-size: var(--rd-fs-body);
+  line-height: var(--rd-lh-body);
+  color: var(--rd-text);
+  /* Ordinary words never break mid-word; only genuinely unbreakable
+     strings (long URLs, tokens) are allowed to wrap anywhere. */
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+/* Ordinary prose is capped near 72ch for comfortable reading; intrinsically
+   wide blocks (tables, code, figures, columns) use the full column width. */
+.confluence-content > p,
+.confluence-content > ul,
+.confluence-content > ol,
+.confluence-content > dl,
+.confluence-content > blockquote,
+.confluence-content > h1,
+.confluence-content > h2,
+.confluence-content > h3,
+.confluence-content > h4,
+.confluence-content > h5,
+.confluence-content > h6 {
+  max-width: var(--rd-measure);
+}
+
+.confluence-content > :first-child { margin-top: 0; }
+.confluence-content > :last-child  { margin-bottom: 0; }
+
+/* ── Headings ── */
+.confluence-content h1,
+.confluence-content h2,
+.confluence-content h3,
+.confluence-content h4,
+.confluence-content h5,
+.confluence-content h6 {
+  color: var(--rd-text);
+  font-weight: 650;
+  letter-spacing: -0.005em;
+  /* Keeps hash targets clear of the sticky app chrome. */
+  scroll-margin-top: 5rem;
+}
+.confluence-content h1,
+.confluence-content h2 {
+  font-size: var(--rd-fs-section);
+  line-height: var(--rd-lh-section);
+  margin: 2.5rem 0 0.75rem;
+  padding-bottom: 0.375rem;
+  border-bottom: 1px solid var(--rd-border);
+}
+.confluence-content h3 {
+  font-size: var(--rd-fs-subsection);
+  line-height: var(--rd-lh-subsection);
+  margin: 2rem 0 0.5rem;
+}
+.confluence-content h4 {
+  font-size: var(--rd-fs-minor);
+  line-height: 1.5rem;
+  margin: 1.5rem 0 0.5rem;
+}
+.confluence-content h5,
+.confluence-content h6 {
+  font-size: var(--rd-fs-meta);
+  line-height: var(--rd-lh-meta);
+  text-transform: none;
+  margin: 1.25rem 0 0.375rem;
+  color: var(--rd-text-secondary);
+}
+
+/* ── Text ── */
+.confluence-content p {
+  margin: 0 0 1rem;
+}
+.confluence-content strong,
+.confluence-content b {
+  font-weight: 650;
+  color: var(--rd-text);
+}
+.confluence-content em,
+.confluence-content i {
+  font-style: italic;
+}
+.confluence-content u {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.confluence-content del,
+.confluence-content s {
+  text-decoration: line-through;
+  color: var(--rd-text-muted);
+}
+.confluence-content sub,
+.confluence-content sup {
+  font-size: 0.75em;
+}
+.confluence-content hr {
+  border: 0;
+  border-top: 1px solid var(--rd-border);
+  margin: 2rem 0;
+}
+.confluence-content blockquote {
+  margin: 1.25rem 0;
+  padding: 0.25rem 0 0.25rem 1rem;
+  border-left: 3px solid var(--rd-border-strong);
+  color: var(--rd-text-secondary);
+}
+.confluence-content blockquote > :first-child { margin-top: 0; }
+.confluence-content blockquote > :last-child  { margin-bottom: 0; }
+
+/* ── Links ── */
+.confluence-content a {
+  color: var(--rd-link);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  /* Long URLs may wrap anywhere so they never force horizontal scrolling. */
+  overflow-wrap: anywhere;
+}
+.confluence-content a:hover {
+  color: var(--rd-link-hover);
+  text-decoration-thickness: 2px;
+}
+.confluence-content a:visited {
+  color: var(--rd-link-visited);
+}
+.confluence-content a.cf-external-link::after {
+  content: '\2197';
+  display: inline-block;
+  margin-left: 0.15em;
+  font-size: 0.8em;
+  text-decoration: none;
+  vertical-align: baseline;
+}
+.confluence-content .cf-unsafe-link {
+  color: var(--rd-text-muted);
+  text-decoration: line-through;
+}
+
+/* ── Lists ──
+   Depth-specific markers plus a clear indent make nesting unambiguous.
+   Paragraphs inside list items lose their block margin so items stay tight. */
+.confluence-content ul,
+.confluence-content ol {
+  margin: 0 0 1rem;
+  padding-left: 1.75rem;
+}
+.confluence-content li {
+  margin: 0 0 0.375rem;
+}
+.confluence-content li > p {
+  margin: 0 0 0.375rem;
+}
+.confluence-content li > p:last-child {
+  margin-bottom: 0;
+}
+.confluence-content li > ul,
+.confluence-content li > ol {
+  margin-top: 0.375rem;
+  margin-bottom: 0.25rem;
+}
+.confluence-content ul { list-style-type: disc; }
+.confluence-content ul ul { list-style-type: circle; }
+.confluence-content ul ul ul { list-style-type: square; }
+.confluence-content ol { list-style-type: decimal; }
+.confluence-content ol ol { list-style-type: lower-alpha; }
+.confluence-content ol ol ol { list-style-type: lower-roman; }
+.confluence-content li::marker {
+  color: var(--rd-text-muted);
+}
+
+/* ── Task lists ── */
+.confluence-content .cf-task-list {
+  list-style: none;
+  padding-left: 0;
+}
+.confluence-content .cf-task {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+.confluence-content .cf-task-box {
+  flex-shrink: 0;
+  font-size: 1.1em;
+  line-height: 1.4;
+  color: var(--rd-text-secondary);
+}
+.confluence-content .cf-task-text {
+  min-width: 0;
+}
+.confluence-content .cf-task-done .cf-task-text {
+  color: var(--rd-text-muted);
+  text-decoration: line-through;
+}
+
+/* ── Code ── */
+.confluence-content code {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.9em;
+  padding: 0.1em 0.35em;
+  border-radius: 0.25rem;
+  background-color: var(--rd-code-bg);
+  color: var(--rd-code-text);
+  overflow-wrap: anywhere;
+}
+.confluence-content pre {
+  margin: 1.25rem 0;
+  padding: 1rem 1.125rem;
+  border-radius: 0.5rem;
+  background-color: var(--rd-block-bg);
+  color: var(--rd-block-text);
+  font-size: var(--rd-fs-meta);
+  line-height: 1.6;
+  /* Whitespace preserved exactly; the block scrolls, not the page. */
+  white-space: pre;
+  overflow-x: auto;
+  max-width: 100%;
+}
+.confluence-content pre code {
+  background: none;
+  color: inherit;
+  padding: 0;
+  border-radius: 0;
+  font-size: inherit;
+  overflow-wrap: normal;
+  white-space: inherit;
+}
+.confluence-content .cf-code-figure {
+  margin: 1.25rem 0;
+}
+.confluence-content .cf-code-figure pre {
+  margin: 0;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+.confluence-content .cf-code-title {
+  padding: 0.5rem 1.125rem;
+  border: 1px solid var(--rd-border);
+  border-bottom: 0;
+  border-top-left-radius: 0.5rem;
+  border-top-right-radius: 0.5rem;
+  background-color: var(--rd-surface-raised);
+  color: var(--rd-text-secondary);
+  font-size: var(--rd-fs-meta);
+  font-weight: 600;
+}
+
+/* ── Tables ──
+   Each table gets its own labelled, keyboard-reachable scroll container so a
+   wide table never creates page-level horizontal scrolling. */
+.confluence-content .cf-table-wrap {
+  margin: 1.5rem 0;
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--rd-border);
+  border-radius: 0.5rem;
+}
+.confluence-content table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--rd-fs-meta);
+  line-height: var(--rd-lh-meta);
+}
+.confluence-content th,
+.confluence-content td {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--rd-border);
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: break-word;
+}
+.confluence-content th {
+  background-color: var(--rd-surface-raised);
+  color: var(--rd-text);
+  font-weight: 650;
+}
+.confluence-content caption {
+  padding: 0.5rem 0.75rem;
+  color: var(--rd-text-secondary);
+  font-size: var(--rd-fs-meta);
+  text-align: left;
+}
+.confluence-content td > p:last-child,
+.confluence-content th > p:last-child {
+  margin-bottom: 0;
+}
+/* Confluence marks highlighted cells with its own semantic attribute; map it to
+   a theme-aware tint rather than trusting the authored light-mode colour. */
+.confluence-content td[data-highlight-colour],
+.confluence-content th[data-highlight-colour] {
+  background-color: var(--rd-surface-raised);
+  box-shadow: inset 3px 0 0 var(--rd-border-strong);
+}
+
+/* ── Callouts (info / note / tip / warning / error) ── */
+.confluence-content .cf-callout {
+  margin: 1.5rem 0;
+  padding: 0.875rem 1.125rem;
+  border: 1px solid;
+  border-left-width: 4px;
+  border-radius: 0.5rem;
+}
+.confluence-content .cf-callout-label {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin: 0 0 0.375rem;
+  font-size: var(--rd-fs-meta);
+  line-height: var(--rd-lh-meta);
+  font-weight: 650;
+}
+.confluence-content .cf-callout-icon {
+  flex-shrink: 0;
+  width: 1rem;
+  height: 1rem;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
+.confluence-content .cf-callout-body > :first-child { margin-top: 0; }
+.confluence-content .cf-callout-body > :last-child  { margin-bottom: 0; }
+.confluence-content .cf-callout p,
+.confluence-content .cf-callout li,
+.confluence-content .cf-callout strong,
+.confluence-content .cf-callout td,
+.confluence-content .cf-callout th {
+  color: inherit;
+}
+
+.confluence-content .cf-callout-info {
+  background-color: var(--rd-info-bg);
+  border-color: var(--rd-info-border);
+  color: var(--rd-info-text);
+}
+.confluence-content .cf-callout-note {
+  background-color: var(--rd-note-bg);
+  border-color: var(--rd-note-border);
+  color: var(--rd-note-text);
+}
+.confluence-content .cf-callout-success {
+  background-color: var(--rd-success-bg);
+  border-color: var(--rd-success-border);
+  color: var(--rd-success-text);
+}
+.confluence-content .cf-callout-warning {
+  background-color: var(--rd-warning-bg);
+  border-color: var(--rd-warning-border);
+  color: var(--rd-warning-text);
+}
+.confluence-content .cf-callout-danger {
+  background-color: var(--rd-danger-bg);
+  border-color: var(--rd-danger-border);
+  color: var(--rd-danger-text);
+}
+.confluence-content .cf-callout-neutral {
+  background-color: var(--rd-neutral-bg);
+  border-color: var(--rd-neutral-border);
+  color: var(--rd-neutral-text);
+}
+
+/* Icon glyphs drawn as inline SVG data URIs so the callout needs no JS and no
+   icon-font dependency. currentColor is not available in data URIs, so each
+   variant sets a stroke that matches its own foreground token. */
+.confluence-content .cf-callout-info .cf-callout-icon,
+.confluence-content .cf-callout-note .cf-callout-icon,
+.confluence-content .cf-callout-neutral .cf-callout-icon {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23475569' stroke-width='1.6'%3E%3Ccircle cx='10' cy='10' r='7.5'/%3E%3Cpath d='M10 9v5M10 6.2h.01' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+.confluence-content .cf-callout-success .cf-callout-icon {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23047857' stroke-width='1.8'%3E%3Ccircle cx='10' cy='10' r='7.5'/%3E%3Cpath d='M6.8 10.3l2.2 2.2 4.2-4.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+.confluence-content .cf-callout-warning .cf-callout-icon {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23b45309' stroke-width='1.7'%3E%3Cpath d='M10 2.6l7.4 13H2.6z' stroke-linejoin='round'/%3E%3Cpath d='M10 7.6v3.6M10 13.6h.01' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+.confluence-content .cf-callout-danger .cf-callout-icon {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23b91c1c' stroke-width='1.8'%3E%3Ccircle cx='10' cy='10' r='7.5'/%3E%3Cpath d='M7.2 7.2l5.6 5.6M12.8 7.2l-5.6 5.6' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+.dark .confluence-content .cf-callout-info .cf-callout-icon,
+.dark .confluence-content .cf-callout-note .cf-callout-icon,
+.dark .confluence-content .cf-callout-neutral .cf-callout-icon {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23cbd5e1' stroke-width='1.6'%3E%3Ccircle cx='10' cy='10' r='7.5'/%3E%3Cpath d='M10 9v5M10 6.2h.01' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+.dark .confluence-content .cf-callout-success .cf-callout-icon {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%2334d399' stroke-width='1.8'%3E%3Ccircle cx='10' cy='10' r='7.5'/%3E%3Cpath d='M6.8 10.3l2.2 2.2 4.2-4.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+.dark .confluence-content .cf-callout-warning .cf-callout-icon {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23fbbf24' stroke-width='1.7'%3E%3Cpath d='M10 2.6l7.4 13H2.6z' stroke-linejoin='round'/%3E%3Cpath d='M10 7.6v3.6M10 13.6h.01' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+.dark .confluence-content .cf-callout-danger .cf-callout-icon {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23f87171' stroke-width='1.8'%3E%3Ccircle cx='10' cy='10' r='7.5'/%3E%3Cpath d='M7.2 7.2l5.6 5.6M12.8 7.2l-5.6 5.6' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+/* ── Unsupported / fallback blocks ── */
+.confluence-content .cf-unsupported {
+  margin: 1.5rem 0;
+  padding: 0.875rem 1.125rem;
+  border: 1px dashed var(--rd-border-strong);
+  border-radius: 0.5rem;
+  background-color: var(--rd-surface-raised);
+  color: var(--rd-text-secondary);
+}
+.confluence-content .cf-unsupported-label {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin: 0;
+  font-size: var(--rd-fs-meta);
+  line-height: var(--rd-lh-meta);
+  font-weight: 650;
+  color: var(--rd-text);
+}
+.confluence-content .cf-unsupported-icon {
+  flex-shrink: 0;
+  width: 1rem;
+  height: 1rem;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23475569' stroke-width='1.6'%3E%3Crect x='2.8' y='4' width='14.4' height='12' rx='1.6'/%3E%3Cpath d='M2.8 8h14.4' /%3E%3C/svg%3E");
+}
+.dark .confluence-content .cf-unsupported-icon {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23cbd5e1' stroke-width='1.6'%3E%3Crect x='2.8' y='4' width='14.4' height='12' rx='1.6'/%3E%3Cpath d='M2.8 8h14.4' /%3E%3C/svg%3E");
+}
+.confluence-content .cf-unsupported-detail {
+  margin: 0.375rem 0 0;
+  font-size: var(--rd-fs-meta);
+  overflow-wrap: anywhere;
+}
+.confluence-content .cf-unsupported-body {
+  margin-top: 0.625rem;
+}
+.confluence-content .cf-unsupported-body > :last-child {
+  margin-bottom: 0;
+}
+.confluence-content .cf-unsupported-link {
+  margin: 0.5rem 0 0;
+  font-size: var(--rd-fs-meta);
+}
+
+/* ── Images and figures ── */
+.confluence-content .cf-figure {
+  margin: 1.5rem 0;
+  max-width: 100%;
+}
+.confluence-content .cf-image {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  border: 1px solid var(--rd-border);
+}
+.confluence-content .cf-figcaption {
+  margin-top: 0.5rem;
+  font-size: var(--rd-fs-meta);
+  line-height: var(--rd-lh-meta);
+  color: var(--rd-text-secondary);
+}
+.confluence-content .cf-figcaption > :last-child {
+  margin-bottom: 0;
+}
+.confluence-content .cf-image-missing {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 1px dashed var(--rd-border-strong);
+  border-radius: 0.5rem;
+  background-color: var(--rd-surface-raised);
+  font-size: var(--rd-fs-meta);
+  line-height: var(--rd-lh-meta);
+  color: var(--rd-text-secondary);
+}
+.confluence-content .cf-image-missing-icon {
+  flex-shrink: 0;
+  width: 1.125rem;
+  height: 1.125rem;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23475569' stroke-width='1.5'%3E%3Crect x='2.5' y='3.8' width='15' height='12.4' rx='1.6'/%3E%3Ccircle cx='7.4' cy='8.2' r='1.3'/%3E%3Cpath d='M3.2 14.4l4.1-3.9 3.2 3 2.4-2.2 3.9 3.3' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+.dark .confluence-content .cf-image-missing-icon {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23cbd5e1' stroke-width='1.5'%3E%3Crect x='2.5' y='3.8' width='15' height='12.4' rx='1.6'/%3E%3Ccircle cx='7.4' cy='8.2' r='1.3'/%3E%3Cpath d='M3.2 14.4l4.1-3.9 3.2 3 2.4-2.2 3.9 3.3' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+.confluence-content .cf-image-missing-name {
+  color: var(--rd-text);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.confluence-content .cf-image-missing-note {
+  color: var(--rd-text-muted);
+  font-size: var(--rd-fs-fine);
+}
+.confluence-content .cf-image-missing-link {
+  margin-left: auto;
+  white-space: nowrap;
+  /* Standalone action, not a link inside a sentence, so it does not get the
+     WCAG 2.2 inline exception and needs a 24px-tall target of its own. */
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.5rem;
+  padding: 0 0.25rem;
+}
+
+/* ── Inline chips: mentions, status, issue keys, page refs ── */
+.confluence-content .cf-mention,
+.confluence-content .cf-status,
+.confluence-content .cf-issue-key,
+.confluence-content .cf-page-ref {
+  display: inline;
+  padding: 0.05em 0.4em;
+  border-radius: 0.25rem;
+  font-size: 0.95em;
+  font-weight: 500;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+.confluence-content .cf-mention {
+  background-color: var(--rd-info-bg);
+  color: var(--rd-info-text);
+  box-shadow: inset 0 0 0 1px var(--rd-info-border);
+}
+.confluence-content .cf-mention-unresolved {
+  background-color: var(--rd-neutral-bg);
+  color: var(--rd-text-secondary);
+  box-shadow: inset 0 0 0 1px var(--rd-neutral-border);
+  font-style: italic;
+}
+.confluence-content .cf-issue-key {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.9em;
+  background-color: var(--rd-note-bg);
+  color: var(--rd-note-text);
+  box-shadow: inset 0 0 0 1px var(--rd-note-border);
+}
+.confluence-content .cf-issue-query {
+  font-family: inherit;
+}
+.confluence-content .cf-page-ref {
+  background-color: var(--rd-neutral-bg);
+  color: var(--rd-text-secondary);
+  box-shadow: inset 0 0 0 1px var(--rd-neutral-border);
+}
+.confluence-content .cf-status {
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  font-size: 0.8em;
+  font-weight: 700;
+}
+.confluence-content .cf-status-info    { background-color: var(--rd-info-bg);    color: var(--rd-info-text);    box-shadow: inset 0 0 0 1px var(--rd-info-border); }
+.confluence-content .cf-status-note    { background-color: var(--rd-note-bg);    color: var(--rd-note-text);    box-shadow: inset 0 0 0 1px var(--rd-note-border); }
+.confluence-content .cf-status-success { background-color: var(--rd-success-bg); color: var(--rd-success-text); box-shadow: inset 0 0 0 1px var(--rd-success-border); }
+.confluence-content .cf-status-warning { background-color: var(--rd-warning-bg); color: var(--rd-warning-text); box-shadow: inset 0 0 0 1px var(--rd-warning-border); }
+.confluence-content .cf-status-danger  { background-color: var(--rd-danger-bg);  color: var(--rd-danger-text);  box-shadow: inset 0 0 0 1px var(--rd-danger-border); }
+.confluence-content .cf-status-neutral { background-color: var(--rd-neutral-bg); color: var(--rd-neutral-text); box-shadow: inset 0 0 0 1px var(--rd-neutral-border); }
+
+.confluence-content .cf-emoticon {
+  font-style: normal;
+}
+/* Unfilled template ghost text: visibly not authored instruction. */
+.confluence-content .cf-placeholder {
+  color: var(--rd-text-muted);
+  font-style: italic;
+  border-bottom: 1px dotted var(--rd-border-strong);
+}
+
+/* ── Expand / details ── */
+.confluence-content .cf-expand {
+  margin: 1.25rem 0;
+  border: 1px solid var(--rd-border);
+  border-radius: 0.5rem;
+  background-color: var(--rd-surface);
+}
+.confluence-content .cf-expand-summary {
+  padding: 0.625rem 1rem;
+  font-size: var(--rd-fs-meta);
+  line-height: var(--rd-lh-meta);
+  font-weight: 600;
+  color: var(--rd-text);
+  cursor: pointer;
+  border-radius: 0.5rem;
+  list-style: none;
+}
+.confluence-content .cf-expand-summary::-webkit-details-marker {
+  display: none;
+}
+.confluence-content .cf-expand-summary::before {
+  content: '\25B8';
+  display: inline-block;
+  margin-right: 0.5rem;
+  color: var(--rd-text-muted);
+  transition: transform 0.15s ease-out;
+}
+.confluence-content .cf-expand[open] > .cf-expand-summary::before {
+  transform: rotate(90deg);
+}
+.confluence-content .cf-expand-summary:hover {
+  background-color: var(--rd-surface-raised);
+}
+.confluence-content .cf-expand-body {
+  padding: 0 1rem 0.875rem;
+}
+.confluence-content .cf-expand-body > :first-child { margin-top: 0; }
+.confluence-content .cf-expand-body > :last-child  { margin-bottom: 0; }
+
+/* ── Named macro sections (e.g. Confluence Page Properties) ──
+   The body renders faithfully, so this is a label, not a warning box. */
+.confluence-content .cf-macro-section {
+  margin: 1.5rem 0;
+}
+.confluence-content .cf-macro-section-label {
+  margin: 0 0 0.5rem;
+  font-size: var(--rd-fs-meta);
+  line-height: var(--rd-lh-meta);
+  font-weight: 650;
+  color: var(--rd-text-secondary);
+}
+.confluence-content .cf-panel-title {
+  margin: 0 0 0.375rem;
+}
+
+/* ── Decision lists ── */
+.confluence-content .cf-decision {
+  margin: 1.25rem 0;
+  padding-left: 1rem;
+  border-left: 3px solid var(--rd-border-strong);
+}
+.confluence-content .cf-decision > :last-child { margin-bottom: 0; }
+
+/* ── Confluence column layouts ── */
+.confluence-content .cf-columns {
+  display: grid;
+  gap: 1.5rem;
+  margin: 1.5rem 0;
+}
+.confluence-content .cf-columns-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.confluence-content .cf-columns-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.confluence-content .cf-col { min-width: 0; }
+.confluence-content .cf-col > :first-child { margin-top: 0; }
+.confluence-content .cf-col > :last-child  { margin-bottom: 0; }
+
+@media (max-width: 767px) {
+  .confluence-content .cf-columns-2,
+  .confluence-content .cf-columns-3 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Anchors are zero-size targets; offset them from the sticky chrome. */
+.confluence-content .cf-anchor {
+  display: block;
+  height: 0;
+  scroll-margin-top: 5rem;
+}
+
+/* ── Copy-code action ── */
+.cf-code-copy {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  padding: 0.3125rem 0.625rem;
+  border-radius: 0.375rem;
+  border: 1px solid rgb(148 163 184 / 0.4);
+  background-color: rgb(15 23 42 / 0.85);
+  color: #e8edf5;
+  font-size: var(--rd-fs-fine);
+  font-weight: 600;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s ease-out;
+}
+.cf-code-host {
+  position: relative;
+}
+.cf-code-host:hover .cf-code-copy,
+.cf-code-copy:focus-visible {
+  opacity: 1;
+}
+.cf-code-copy:hover {
+  background-color: rgb(30 41 59 / 0.95);
+}
+
+/* ── Command palette ── */
+.cmd-backdrop {
+  @apply fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50;
+  animation: fadeIn 0.15s ease-out;
+}
+
+/* ── Recharts tooltip override ── */
+.recharts-default-tooltip {
+  @apply !rounded-lg !border-slate-200 !shadow-dropdown !text-sm;
+}
+
+/* ── Focus visible ── */
+:focus-visible {
+  outline: 2px solid var(--rd-focus);
+  outline-offset: 2px;
+}
+
+/* ── Global dark mode color overrides ── */
+/* Application chrome only. Imported article content never carries these Tailwind
+   class names, so these rules cannot reach inside .confluence-content. */
+.dark main h1, .dark main h2, .dark main h3 {
+  color: #f1f5f9;
+}
+
+/* [class~="x"] matches the exact class word, avoiding hover:/dark: prefix
+   collisions AND PostCSS circular-dependency errors with Tailwind utilities. */
+.dark [class~="text-slate-900"] { color: #f1f5f9; }
+.dark [class~="text-slate-800"] { color: #e2e8f0; }
+.dark [class~="text-slate-700"] { color: #cbd5e1; }
+.dark [class~="text-slate-600"] { color: #94a3b8; }
+.dark [class~="text-slate-500"]:not(.label):not(.caption) { color: #94a3b8; }
+.dark [class~="text-slate-400"] { color: #64748b; }
+.dark [class~="text-slate-300"] { color: #475569; }
+
+.dark [class~="bg-red-50"]:not(.badge-red) { background-color: rgb(127 29 29 / 0.2); }
+.dark [class~="bg-amber-50"]:not(.badge-amber) { background-color: rgb(120 53 15 / 0.2); }
+.dark [class~="bg-emerald-50"]:not(.badge-green) { background-color: rgb(6 78 59 / 0.2); }
+.dark [class~="bg-brand-50"]:not(.badge-brand) { background-color: rgb(49 46 129 / 0.2); }
+.dark [class~="bg-slate-100"]:not(.badge-slate):not(.loading-skeleton) { background-color: #334155; }
+.dark [class~="bg-slate-50"] { background-color: rgb(30 41 59 / 0.5); }
+
+.dark [class~="border-slate-200"] { border-color: #334155; }
+.dark [class~="border-slate-100"] { border-color: rgb(51 65 85 / 0.5); }
+.dark [class~="border-slate-50"] { border-color: rgb(51 65 85 / 0.3); }
+.dark [class~="border-emerald-200"] { border-color: #065f46; }
+.dark [class~="border-red-200"] { border-color: #7f1d1d; }
+.dark [class~="border-amber-200"] { border-color: #78350f; }
+.dark [class~="border-brand-200"] { border-color: #3730a3; }
+.dark [class~="border-brand-300"] { border-color: #4338ca; }
+
+.dark [class~="divide-slate-50"] > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgb(51 65 85 / 0.4);
+}
+
+.dark [class~="text-brand-600"]:not(button):not(a) { color: #a5b4fc; }
+.dark [class~="text-brand-700"]:not(button):not(a) { color: #c7d2fe; }
+.dark [class~="text-brand-800"] { color: #e0e7ff; }
+.dark [class~="text-red-600"]:not(.badge-red) { color: #fca5a5; }
+.dark [class~="text-red-700"]:not(.badge-red) { color: #fca5a5; }
+.dark [class~="text-red-500"] { color: #fca5a5; }
+.dark [class~="text-emerald-700"]:not(.badge-green) { color: #6ee7b7; }
+.dark [class~="text-emerald-500"] { color: #6ee7b7; }
+.dark [class~="text-amber-700"]:not(.badge-amber) { color: #fcd34d; }
+.dark [class~="text-amber-600"]:not(.badge-amber) { color: #fcd34d; }
+.dark [class~="text-amber-500"] { color: #fcd34d; }
+
+/* Checkboxes */
+.dark input[type="checkbox"] {
+  background-color: #1e293b;
+  border-color: #475569;
+}
+
+/* ── Dark mode transitions ── */
+html.transitioning,
+html.transitioning *,
+html.transitioning *::before,
+html.transitioning *::after {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease !important;
+  transition-delay: 0s !important;
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Forced colors ── */
+@media (forced-colors: active) {
+  .confluence-content .cf-callout,
+  .confluence-content .cf-unsupported,
+  .confluence-content .cf-table-wrap,
+  .rd-panel,
+  .rd-chip {
+    border: 1px solid CanvasText;
+  }
+  .confluence-content .cf-callout-icon,
+  .confluence-content .cf-unsupported-icon,
+  .confluence-content .cf-image-missing-icon {
+    forced-color-adjust: none;
+  }
+  .rd-toc-link[aria-current='true'] {
+    outline: 2px solid Highlight;
+  }
+  :focus-visible {
+    outline: 2px solid Highlight;
+  }
+}

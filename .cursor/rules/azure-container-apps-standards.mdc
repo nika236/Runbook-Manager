@@ -1,0 +1,227 @@
+---
+description: Azure Container Apps hosting standards — mandatory for all apps (Node.js and Python only)
+alwaysApply: true
+---
+
+# Azure Container Apps Standards
+
+All applications hosted on Azure Container Apps **must** comply with the following standards. These are mandatory requirements. They apply to **Node.js and Python** applications only — see the `platform-resource-config` rule for supported runtimes and resources.
+
+## Dockerfile (Mandatory)
+
+Every application repository **must** contain a `Dockerfile` at the project root. You **must** use one of the approved base images below. Always use a **multi-stage build**.
+
+### Approved Base Images
+
+Only the following base images are permitted. Do not use any image outside this list.
+
+| Runtime | Builder image | Runner image | Type |
+|---------|--------------|-------------|------|
+| Node.js | `node:20-alpine3.19` | `node:20-alpine3.19` | Alpine |
+| Python | `python:3.12-slim-bookworm` | `python:3.12-slim-bookworm` | Debian |
+
+### Non-root User (Mandatory)
+
+Use the exact command for your base image type:
+
+- **Alpine images** (Node.js): `addgroup --system --gid 1001 appgroup && adduser --system --uid 1001 -G appgroup appuser`
+- **Debian images** (Python): `groupadd --system --gid 1001 appgroup && useradd --system --uid 1001 --gid appgroup --no-create-home appuser`
+
+### Complete Dockerfile per Runtime
+
+#### Node.js
+
+```dockerfile
+FROM node:20-alpine3.19 AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+
+FROM node:20-alpine3.19 AS runner
+WORKDIR /app
+RUN addgroup --system --gid 1001 appgroup && \
+    adduser --system --uid 1001 -G appgroup appuser
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/ ./
+USER appuser
+EXPOSE 5000
+ENV PORT=5000
+ENV HOST=0.0.0.0
+CMD ["node", "server.js"]
+```
+
+#### Python
+
+```dockerfile
+FROM python:3.12-slim-bookworm AS builder
+WORKDIR /app
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+
+FROM python:3.12-slim-bookworm AS runner
+WORKDIR /app
+RUN groupadd --system --gid 1001 appgroup && \
+    useradd --system --uid 1001 --gid appgroup --no-create-home appuser
+COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+COPY --from=builder /app/ ./
+USER appuser
+EXPOSE 5000
+ENV PORT=5000
+ENV HOST=0.0.0.0
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
+```
+
+### Rules (all runtimes)
+
+- **Port 5000 is mandatory** — every application must `EXPOSE 5000` and set `ENV PORT=5000`. No other port is allowed
+- **Only approved base images** — do not use any image outside the table above. Never use `:latest`
+- **Non-root user is mandatory** — use the exact user creation command for your image type (Alpine or Debian)
+- Copy only the built output into the runtime stage, not the entire source tree
+- Set `HOST=0.0.0.0` (or equivalent for your framework) so the Container Apps ingress can reach the process
+- When `db` is enabled in `infra-manifest.json`, replace the `CMD` with an `entrypoint.sh` script — see the `platform-resource-config` rule for entrypoint patterns
+- **Resolve static-asset paths from `process.cwd()`, not `__dirname` / `import.meta.url`** (Node.js + `tsc`). Compiled output lives under `dist/` (the app runs `node dist/.../server.js`), but the Dockerfile copies `public/` to `<WORKDIR>/public` (i.e. `/app/public`). `join(__dirname, "..", "public")` resolves to `/app/dist/public` and fails with `ENOENT … /app/dist/public/…`. Always serve static files with `join(process.cwd(), "public")` (or `express.static(join(process.cwd(), "public"))`). If your Dockerfile copies `public/` explicitly, keep it next to the comment `# served via process.cwd() + '/public', not dist/public`.
+
+## .dockerignore (Mandatory)
+
+Every repository **must** have a `.dockerignore` at the project root:
+
+```
+# Version control
+.git
+.gitignore
+
+# Docs / local artifacts
+README.md
+*.log
+.DS_Store
+
+# Node.js
+node_modules
+.next
+dist
+
+# Python
+__pycache__
+*.pyc
+.venv
+venv
+
+# Env and secrets
+.env
+.env.local
+.env*.local
+*.env
+
+# Local database
+dev.db
+dev.db-journal
+*.db
+*.db-journal
+```
+
+## Health Check Endpoint (Mandatory)
+
+Every app **must** expose a health endpoint that returns **HTTP 200** with no authentication required.
+
+- **Recommended path:** `/health` or `/api/health`
+- **Response:** Any `200 OK` response — a JSON body like `{ "status": "ok" }` is sufficient
+- The endpoint must be reachable without a token or session cookie
+
+**Node.js (Express):**
+
+```javascript
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok" });
+});
+```
+
+**Python (FastAPI):**
+
+```python
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
+```
+
+**Python (Flask):**
+
+```python
+@app.route("/health")
+def health():
+    return {"status": "ok"}, 200
+```
+
+The Container App **must** be configured with probes:
+
+- **Readiness probe:** `GET /health` — period 10s, failure threshold 3
+- **Liveness probe:** `GET /health` — period 30s, failure threshold 5
+
+## Image Tagging (Mandatory)
+
+- Tag every image with the **git SHA**: `<registry>/<repo>:<git-sha>`
+- **Never** use `latest` as the production tag
+- Retain at least the last **3 image tags** in ACR for rollback capability
+
+## Container Apps Configuration Standards
+
+| Setting | Required Value |
+|---------|---------------|
+| Ingress | External, target port `5000` |
+| Min replicas | `1` (production), `0` (staging/dev) |
+| Max replicas | `10` or as agreed with ITOPS |
+| CPU | `0.5` cores minimum |
+| Memory | `1Gi` minimum |
+| Revision mode | `Single` |
+| Registry | Pull from ACR |
+
+## Secrets in Application Code (Mandatory)
+
+Application code must read **all** secrets and configuration from environment variables. Never fetch secrets at runtime using an SDK.
+
+- Read secrets from `process.env` (Node.js) or `os.environ` (Python)
+- Never import or call `@azure/keyvault-secrets`, `SecretClient`, or any Key Vault SDK in application code
+- Never hardcode API keys, tokens, passwords, connection strings, or any secret values in source code
+- The platform stores secrets in Azure Key Vault and injects them into the Container App environment before startup
+- See the `platform-resource-config` rule for supported resources and platform-managed variable names
+- See the `local-dev-and-migrations` rule for environment variable contract and local development setup
+
+## README.md (Mandatory)
+
+Every repository **must** contain a `README.md` at the project root with:
+
+### 1. Project Overview
+
+A short paragraph describing what the application does.
+
+### 2. Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Runtime | Node.js 20 / Python 3.12 |
+| Framework | (Express, FastAPI, etc.) |
+| Container | Azure Container Apps |
+
+### 3. Flow Diagram
+
+A Mermaid diagram showing request flow and external dependencies.
+
+### 4. Project Owner
+
+| Role | Contact |
+|------|---------|
+| Owning team | (team name) |
+| Primary contact | (email) |
+| Escalation | (email) |
+
+## Pre-Commit Checklist
+
+- [ ] `README.md` exists with Tech Stack, Flow Diagram, and Owner sections
+- [ ] `Dockerfile` exists and uses a multi-stage build with approved base images
+- [ ] Runtime stage runs as a non-root user
+- [ ] `.dockerignore` exists and excludes local artifacts
+- [ ] `/health` or `/api/health` endpoint returns 200 with no auth
+- [ ] Image tag is a git SHA, not `latest`
+- [ ] Container App ingress target port is `5000`

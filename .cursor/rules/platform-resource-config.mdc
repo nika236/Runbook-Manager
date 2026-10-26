@@ -1,0 +1,415 @@
+---
+description: Platform-enforced resource availability and runtime constraints — this rule is authoritative and overrides conflicting guidance in other rules
+alwaysApply: true
+---
+
+# Platform Resource Configuration
+
+This rule is **authoritative** and takes precedence over all other rules. It defines the **complete list** of runtimes, infrastructure resources, and Azure services available on this platform.
+
+- If a runtime, resource, or Azure service is not explicitly listed as supported in this rule, it is **NOT available** — do not use it
+- Do not propose, design, or implement solutions using any technology not listed here
+- Do not invent workarounds for missing resources (e.g., file-based storage on **ephemeral** paths when no database is available — use `/data` only as documented, or enable `db`)
+- If the application requires something not supported, state that clearly and recommend contacting the platform administrator
+
+## Supported Runtimes
+
+Only the following application runtimes are supported:
+
+- **Node.js** (version 20, Alpine-based container image)
+- **Python** (version 3.12, Debian slim-based container image)
+
+Do not use any other runtime or language for the application. See the "Unsupported Runtimes" section below for details.
+
+## Supported Infrastructure Resources
+
+The following resources can be enabled in `infra-manifest.json`:
+
+- `keyvault`
+
+Only these resources are available. Do not request or depend on any resource not listed above.
+
+## Unsupported Runtimes — DO NOT USE
+
+The following runtimes and languages are **NOT supported** on this platform. Do not generate code, Dockerfiles, build configs, or deployment artifacts for them. If the existing codebase uses one of these, it must be rewritten in Node.js or Python before deployment.
+
+- **.NET / C#** — not supported
+- **Java / Spring Boot / Kotlin** — not supported
+- **Go / Golang** — not supported
+- **Ruby / Rails** — not supported
+- **PHP / Laravel** — not supported
+- **Rust** — not supported
+- **Elixir / Erlang** — not supported
+- **Perl** — not supported
+
+This restriction applies to all application code, Dockerfiles, CI/CD pipelines, and infrastructure configuration. There are no exceptions.
+
+## Disabled Resources — DO NOT USE
+
+### Database — DISABLED
+
+Database support is **disabled** by the platform administrator. You must NOT:
+
+- Use Prisma, SQLAlchemy, Django ORM, Sequelize, TypeORM, Drizzle, Knex, or any other ORM or database client
+- Reference `DATABASE_URL`, `DB_URL`, `DB_HOST`, `DB_CONNECTION`, or any database connection variable
+- Add `db` to `infra-manifest.json`
+- Generate `prisma/schema.prisma` or any database schema file
+- Generate migration files or `entrypoint.sh` scripts for database migrations
+- Store application data in SQL Server, PostgreSQL, MySQL, SQLite, MongoDB, or any other database
+
+If the application requires persistent data storage, contact the platform administrator to request database support.
+
+### Redis — DISABLED
+
+Redis support is **disabled** by the platform administrator. You must NOT:
+
+- Use `redis`, `ioredis`, `redis-py`, BullMQ, Bull, Bee-Queue, Celery with Redis broker, or any Redis client
+- Reference `REDIS_URL`, `REDIS_HOST`, `CACHE_URL`, or any Redis connection variable
+- Add `redis` to `infra-manifest.json`
+- Implement Redis-backed caching, sessions, queues, pub/sub, locks, or rate limiting
+
+If the application requires Redis, contact the platform administrator to request Redis support.
+
+## Container Filesystem Is Ephemeral — DO NOT USE FOR Persistence
+
+Azure Container Apps use an **ephemeral filesystem** for every path **except** the platform-managed persistent mount at `/data` (see "Persistent Volume — `/data` Mount" below). Any files written **outside** `/data` are **lost** when the container restarts, scales, or redeploys. This happens frequently and without warning.
+
+**You must NOT:**
+
+- Store application data, user data, secrets, configuration, vault files, or any state on the container filesystem **outside** `/data`
+- Use `./uploads`, `./storage`, `./tmp`, or other non-`/data` paths on the container for data that must survive restarts — persist durable files **only** under `/data`
+- Use file-based databases or flat-file stores on **ephemeral** paths (anything outside `/data`)
+- Rely on the filesystem surviving between requests in a multi-replica environment for paths outside `/data`
+
+**Aside from the single managed `/data` volume**, there are no user-configurable volume mounts, no direct Azure Blob Storage access, and no other disk-based persistence on the container. The supported persistence mechanisms are `/data` plus the platform-managed resources listed in this rule.
+
+If the application needs to persist data, use one of the platform-supported resources:
+
+- Azure Key Vault (enable `keyvault` in the manifest) for secrets and configuration
+
+Durable **files** may also be stored on the managed `/data` volume (see "Persistent Volume — `/data` Mount"). If none of the supported resources meet the application's storage needs, contact the platform administrator. Do not invent workarounds.
+
+## Persistent Volume — `/data` Mount
+
+Every project's Container App gets a **dedicated persistent volume mounted at `/data`**. This is the **only** location on the container filesystem that survives container restarts, revision rolls, scale-to-zero events, and image updates. Everything outside `/data` is ephemeral (see the previous section).
+The volume is auto-provisioned and attached by the platform on every deploy. No `infra-manifest.json` entry is required — it is always on.
+
+### What to use `/data` for
+
+- User-uploaded files (avatars, attachments, exports, etc.)
+- Generated artifacts that must survive across requests/restarts (reports, rendered PDFs, image thumbnails, cached computations)
+- SQLite-style local-only data files when the app intentionally runs without a database (see the "No Database Available" constraint)
+- Long-lived application state the app would otherwise lose on every revision roll
+
+### What **NOT** to use `/data` for — secrets are forbidden
+
+`/data` is **storage**, not a secret store. You must **NOT**:
+- Write secrets, API keys, tokens, credentials, passwords, private keys, OAuth refresh tokens, or any other sensitive credential material to `/data`
+- Use `/data` as a substitute for Key Vault — even temporarily
+
+## Unsupported Azure Services — DO NOT USE
+
+The following Azure services and storage mechanisms are **NOT available** on this platform. Do not reference them in code, architecture, documentation, or deployment configurations:
+
+- **Azure Files / Azure File Share** — applications must not provision or mount shares themselves; the platform supplies the managed `/data` volume only (see "Persistent Volume — `/data` Mount")
+- **Azure Blob Storage / Storage Accounts** — not supported
+- **Azure Table Storage** — not supported
+- **Azure Cosmos DB** — not supported
+- **Azure Queue Storage** — not supported
+- **Azure Service Bus** — not supported
+- **Azure Event Hubs / Event Grid** — not supported
+- **Azure Functions** — not supported
+- **Azure Static Web Apps** — not supported
+- **Azure App Service** — not supported (use Container Apps only)
+- **Managed Identity for secret fetching** — not supported (platform injects secrets as env vars)
+
+The **only** Azure infrastructure available to projects is what this rule lists under "Supported Infrastructure Resources." Do not propose, design, or implement solutions using any service not listed there. If the application requires a service not supported by the platform, contact the platform administrator.
+
+## Infrastructure Manifest Contract
+
+Every deployable repository **must** contain `infra-manifest.json` at the repository root.
+
+- Never remove this file
+- Update it whenever infrastructure requirements change
+- The deploy platform reads `infra-manifest.json` as the only infrastructure contract
+- Do not add resources that are not listed in "Supported Infrastructure Resources" above
+
+### Required Manifest Shape
+
+```json
+{
+  "version": 1,
+  "resources": {
+    "keyvault": {
+      "enabled": false,
+      "reason": ""
+    }
+  }
+}
+```
+
+Requirements:
+
+- `version` is required and must be `1`
+- Each supported resource must exist in the manifest
+- Each resource must explicitly set `enabled` to `true` or `false`
+- Each resource must include a short `reason`
+- Do not add resources not supported by the platform
+
+### When To Enable Each Resource
+
+### Enable `keyvault` when:
+
+- The project needs a dedicated Key Vault for runtime secret storage
+- The project depends on platform-managed secret storage for DB or Redis credentials
+
+
+## Platform-Managed Environment Variables
+
+These variables are set automatically by the platform at deploy time. Do not provide them in custom env vars — they are silently ignored:
+
+| Variable | Set when | Value |
+|----------|----------|-------|
+| `AZURE_KV_URL` | `keyvault` enabled | Key Vault URL |
+| `HOST` | Always | `0.0.0.0` |
+| `PORT` | Always | `5000` |
+
+## Key Vault Support
+
+When `keyvault` is enabled in `infra-manifest.json`, the platform provisions a dedicated Azure Key Vault for the project and sets `AZURE_KV_URL` in the Container App environment.
+
+The Key Vault serves **two purposes** with strict prefix separation:
+
+| Category | KV Name Prefix | Who writes | Who reads |
+|----------|---------------|-----------|----------|
+| Platform env-var secrets | `env-` | Platform (deploy flow) | Platform injects as env var |
+| Application runtime secrets | `app-` | Application code at runtime | Application code via SDK |
+
+### Platform Secrets (`env-` prefix)
+
+These are configuration secrets managed by the platform (API keys, third-party tokens, etc.):
+
+- Written to Key Vault by the platform during deployment with names like `env-openai-api-key`
+- The platform injects them into the Container App as environment variables before startup
+- Application code reads them from `process.env` (Node.js) or `os.environ` (Python)
+- **Never** read or write `env-` secrets via the Key Vault SDK in application code
+- Document every config secret in `.env.example`
+
+### Application Secrets (`app-` prefix)
+
+These are secrets managed by the application at runtime (user data, encryption keys, session tokens, etc.):
+
+- Read and written by the application using the `@azure/keyvault-secrets` SDK
+- **All** application secret names **must** be prefixed with `app-`
+- **Never** use secret names without a prefix
+- **Never** read or write secrets with the `env-` prefix from application code
+- Add `@azure/keyvault-secrets` and `@azure/identity` as dependencies
+
+### Local Development Fallback
+
+When `AZURE_KV_URL` is not set (local development), the application must fall back to a **local JSON file** at `data/app-secrets.json`. This follows the same pattern as SQLite for database (local) vs SQL Server (production).
+
+- In production: use `@azure/keyvault-secrets` with `DefaultAzureCredential`
+- Locally: read/write from `data/app-secrets.json`
+- **Never** commit `data/app-secrets.json` — add it to `.gitignore`
+
+### Key Vault Wrapper — Node.js
+
+Use this wrapper pattern to abstract the local vs production secret store:
+
+```typescript
+import { SecretClient } from "@azure/keyvault-secrets";
+import { DefaultAzureCredential } from "@azure/identity";
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
+import { join } from "path";
+
+const APP_PREFIX = "app-";
+const LOCAL_PATH = join(process.cwd(), "data", "app-secrets.json");
+
+const kvClient = process.env.AZURE_KV_URL
+  ? new SecretClient(process.env.AZURE_KV_URL, new DefaultAzureCredential())
+  : null;
+
+function loadLocal(): Record<string, string> {
+  if (!existsSync(LOCAL_PATH)) return {};
+  return JSON.parse(readFileSync(LOCAL_PATH, "utf-8"));
+}
+
+function saveLocal(data: Record<string, string>) {
+  const dir = join(process.cwd(), "data");
+  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+  writeFileSync(LOCAL_PATH, JSON.stringify(data, null, 2));
+}
+
+export async function getAppSecret(name: string): Promise<string | null> {
+  const kvName = \`\${APP_PREFIX}\${name}\`;
+  if (kvClient) {
+    try {
+      const secret = await kvClient.getSecret(kvName);
+      return secret.value ?? null;
+    } catch { return null; }
+  }
+  return loadLocal()[name] ?? null;
+}
+
+export async function setAppSecret(name: string, value: string): Promise<void> {
+  const kvName = \`\${APP_PREFIX}\${name}\`;
+  if (kvClient) {
+    await kvClient.setSecret(kvName, value);
+    return;
+  }
+  const data = loadLocal();
+  data[name] = value;
+  saveLocal(data);
+}
+
+export async function deleteAppSecret(name: string): Promise<void> {
+  const kvName = \`\${APP_PREFIX}\${name}\`;
+  if (kvClient) {
+    await kvClient.beginDeleteSecret(kvName);
+    return;
+  }
+  const data = loadLocal();
+  delete data[name];
+  saveLocal(data);
+}
+```
+
+### Key Vault Wrapper — Python
+
+```python
+import os
+import json
+from pathlib import Path
+
+APP_PREFIX = "app-"
+LOCAL_PATH = Path("data/app-secrets.json")
+
+_kv_client = None
+if os.environ.get("AZURE_KV_URL"):
+    from azure.keyvault.secrets import SecretClient
+    from azure.identity import DefaultAzureCredential
+    _kv_client = SecretClient(
+        vault_url=os.environ["AZURE_KV_URL"],
+        credential=DefaultAzureCredential(),
+    )
+
+def _load_local() -> dict:
+    if not LOCAL_PATH.exists():
+        return {}
+    return json.loads(LOCAL_PATH.read_text())
+
+def _save_local(data: dict) -> None:
+    LOCAL_PATH.parent.mkdir(parents=True, exist_ok=True)
+    LOCAL_PATH.write_text(json.dumps(data, indent=2))
+
+def get_app_secret(name: str) -> str | None:
+    kv_name = f"{APP_PREFIX}{name}"
+    if _kv_client:
+        try:
+            return _kv_client.get_secret(kv_name).value
+        except Exception:
+            return None
+    return _load_local().get(name)
+
+def set_app_secret(name: str, value: str) -> None:
+    kv_name = f"{APP_PREFIX}{name}"
+    if _kv_client:
+        _kv_client.set_secret(kv_name, value)
+        return
+    data = _load_local()
+    data[name] = value
+    _save_local(data)
+
+def delete_app_secret(name: str) -> None:
+    kv_name = f"{APP_PREFIX}{name}"
+    if _kv_client:
+        _kv_client.begin_delete_secret(kv_name)
+        return
+    data = _load_local()
+    data.pop(name, None)
+    _save_local(data)
+```
+
+### Rules
+
+- Secrets must never be committed to source control
+- Never hardcode credentials, tokens, connection strings, or secret values
+- Platform secrets (`env-`): read from `process.env` / `os.environ` only
+- Application secrets (`app-`): use the wrapper pattern above
+- Never access Key Vault secrets without a prefix — all names must start with `env-` or `app-`
+- Add `data/` and `data/app-secrets.json` to `.gitignore`
+
+## Architecture Constraints
+
+When designing the application architecture, you must work within the platform's supported resources. Do not invent alternative persistence, caching, or secret storage mechanisms.
+
+### Secrets and Configuration
+
+Key Vault supports two categories of secrets with strict prefix separation:
+
+**Platform configuration secrets (`env-` prefix):**
+
+- API keys, third-party tokens, and app config that the developer provides during deployment
+- Document them in `.env.example`
+- The platform stores them in Key Vault and injects them as environment variables
+- Application code reads them from `process.env` (Node.js) or `os.environ` (Python)
+- Never access `env-` secrets via the Key Vault SDK
+
+**Application runtime secrets (`app-` prefix):**
+
+- User-generated data, encryption keys, session tokens, or any secret the app needs to create, update, or delete at runtime
+- Use the Key Vault wrapper pattern (see the "Key Vault Support" section) with `@azure/keyvault-secrets` SDK
+- All secret names must be prefixed with `app-`
+- Locally, the wrapper falls back to `data/app-secrets.json` when `AZURE_KV_URL` is not set
+
+If the application needs to store secrets at runtime, use the `app-` prefix and the Key Vault wrapper — never build custom encrypted file stores or vault-like mechanisms.
+
+### No Database Available
+
+Since database support is disabled, the application **cannot use Azure SQL** or enable `db` in the manifest. Design the application to either:
+
+- Be stateless (process requests without storing durable business data)
+- Use external APIs or services that the user provides via environment variables
+- Use in-memory state that can be lost on restart (acceptable for caches, not for user data)
+- Store durable files **only** on the managed `/data` volume (see "Persistent Volume — `/data` Mount"), accepting embedded-DB / single-file limitations — not as a full substitute for a relational database at scale
+
+Do not use SQLite, JSON files, or flat-file stores **on ephemeral paths** (anything outside `/data`) as a substitute for proper database support.
+
+### No Redis Available
+
+Since Redis support is disabled, the application **cannot use shared caching, queues, pub/sub, or distributed locks**. Design the application to work without these features or use in-process alternatives that accept data loss on restart.
+
+## Resource Group Contract
+
+Every project is provisioned into its own dedicated resource group:
+
+- `AI-Generated-<project-name>`
+
+Requirements:
+
+- Derive the resource group name from the project name
+- Normalize it to Azure-safe naming
+- Keep all project-scoped Azure resources in that same resource group
+- Do not place generated project resources in a shared application resource group
+
+## Deployment Safety
+
+Deployment must fail closed when:
+
+- `infra-manifest.json` is missing
+- The manifest is malformed
+- Unsupported resources are requested
+- Code requires Key Vault but the manifest does not enable them
+- Infrastructure provisioning or runtime secret wiring fails
+
+Do not continue deployment with partially assumed infrastructure.
+
+## Lifecycle Rules
+
+Infrastructure lifecycle is tied to project lifecycle:
+
+- Provision the dedicated resource group on first deployment
+- Provision only the supported resources explicitly enabled in the manifest
+- Delete the full dedicated resource group when the project is deleted
+- Do not leave project-scoped resources orphaned

@@ -1,0 +1,140 @@
+---
+description: Project infrastructure manifest contract for AI-generated apps deployed to Azure Container Apps
+alwaysApply: true
+---
+
+# Project Infrastructure Manifest Rule
+
+All deployable AI-generated projects must keep infrastructure requirements in sync with application code.
+
+## Required Repository Artifact
+
+Every deployable repository **must** contain `infra-manifest.json` at the repository root.
+
+- Never remove this file
+- Update it in the same change whenever infrastructure requirements change
+- Do not describe infrastructure needs only in prompts, comments, or README text
+- The deploy platform reads `infra-manifest.json` as the only infrastructure contract
+
+## Supported Resources
+
+Only these infrastructure resources are supported:
+
+- `db`
+- `keyvault`
+- `redis`
+
+Do not add unsupported resources to `infra-manifest.json`.
+
+## Required Manifest Shape
+
+Use this exact structure:
+
+```json
+{
+  "version": 1,
+  "resources": {
+    "db": {
+      "enabled": false,
+      "reason": ""
+    },
+    "keyvault": {
+      "enabled": false,
+      "reason": ""
+    },
+    "redis": {
+      "enabled": false,
+      "reason": ""
+    }
+  }
+}
+```
+
+Requirements:
+
+- `version` is required and must be `1`
+- each supported resource must exist in the manifest
+- each resource must explicitly set `enabled` to `true` or `false`
+- each resource must include a short `reason`
+- do not invent additional fields unless the platform explicitly documents them
+
+## How To Decide When To Enable Each Resource
+
+### Enable `db` when:
+
+- the app stores durable business or application data
+- the app provides CRUD for persistent entities
+- the code introduces Prisma, SQL, ORM, or database client usage
+- the app cannot function correctly with in-memory-only state
+
+Examples:
+
+- customers, users, tickets, orders, tasks, reports, saved settings, uploaded metadata
+
+### Enable `redis` when:
+
+- the app requires shared cache across replicas
+- the app introduces Redis-backed queueing, workers, pub/sub, locks, or sessions
+- the code adds `redis`, `ioredis`, BullMQ, or explicit `REDIS_URL` usage
+- the app needs fast shared ephemeral state that should not live only in process memory
+
+### Enable `keyvault` when:
+
+- the project should receive a dedicated project Key Vault for runtime secret storage and wiring
+- the code introduces direct Azure Key Vault usage
+- the project depends on platform-managed secret storage for DB or Redis credentials
+
+If `db` or `redis` is enabled, `keyvault` must also be enabled.
+
+## Resource Group Contract
+
+Every project must be provisioned into its own dedicated resource group:
+
+- `AI-Generated-<project-name>`
+
+Requirements:
+
+- derive the resource group name from the project name
+- normalize it to Azure-safe naming
+- keep all supported project-scoped Azure resources in that same resource group
+- do not place generated project resources in a shared application resource group
+
+## Secret Handling
+
+Secrets must never be committed to source control.
+
+Requirements:
+
+- store project secrets in the project Key Vault
+- inject runtime configuration through Azure Container Apps secret wiring
+- application code must read stable environment variables only
+- never hardcode credentials, tokens, connection strings, or secret values
+
+Supported runtime environment variables may include:
+
+- `DATABASE_URL`
+- `REDIS_URL`
+- `AZURE_KV_URL`
+
+## Deployment Safety
+
+Deployment must fail closed when:
+
+- `infra-manifest.json` is missing
+- the manifest is malformed
+- unsupported resources are requested
+- code requires DB, Redis, or Key Vault but the manifest does not enable them
+- infrastructure provisioning or runtime secret wiring fails
+
+Do not continue deployment with partially assumed infrastructure.
+
+## Lifecycle Rules
+
+Infrastructure lifecycle is tied to project lifecycle.
+
+Requirements:
+
+- provision the dedicated resource group on first deployment
+- provision only the supported resources explicitly enabled in the manifest
+- delete the full dedicated resource group when the project is deleted
+- do not leave project-scoped DB, Key Vault, Redis, or Container App resources orphaned

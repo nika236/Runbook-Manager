@@ -1,0 +1,62 @@
+# Azure MCP — Quick Reference (71 tools)
+
+All tools follow the same calling pattern:
+```
+tool: "<name>"
+intent: "what you want"
+command: "<sub-command>"      # use learn=true to discover sub-commands
+parameters: { ... }
+```
+
+## Tier 1 — Daily NOC / Runbook Investigation
+
+| Tool | What it does | When to use |
+|------|-------------|-------------|
+| `aks` | List/get AKS clusters, node pools, networking | Pods in bad phase, node issues, cluster health |
+| `compute` | VMs, VMSS, managed disks — lifecycle & monitoring | Memory/disk/CPU issues on VMs |
+| `monitor` | Log Analytics, KQL queries, metrics, activity logs | Query logs, check metrics, inspect activity |
+| `resourcehealth` | Resource availability status & service health events | "Is this resource healthy?" |
+| `applens` | AI-powered diagnostics — detects root cause & suggests fix | First tool for any "resource is broken" report |
+| `containerapps` | List/manage Container Apps | This app's own deployment |
+| `datadog` | Datadog monitors via Azure integration | Cross-check Datadog alerts from runbooks |
+| `applicationinsights` | List App Insights components | Find APM components (not for querying — use `monitor`) |
+
+## Tier 2 — Infrastructure Context
+
+| Tool | What it does |
+|------|-------------|
+| `arm` | Azure Resource Graph queries — find/filter any resource |
+| `group_list` | List resource groups in a subscription |
+| `group_resource_list` | List all resources in a resource group |
+| `subscription_list` | List subscriptions (find the right one first) |
+| `keyvault` | Manage Key Vault secrets/keys/certificates |
+| `redis` | Azure Managed Redis / Cache for Redis |
+| `sql` | Azure SQL databases, servers, elastic pools |
+| `storage` | Storage accounts, blob containers, tables |
+| `eventhubs` | Event Hubs namespaces |
+| `servicebus` | Service Bus queues, topics, subscriptions |
+
+## Tier 3 — Dev, Deployment & IaC
+
+| Tool | What it does |
+|------|-------------|
+| `deploy` | Generate deployment plans, architecture diagrams, CI/CD |
+| `azd` | Azure Developer CLI — init, provision, deploy |
+| `extension_cli_generate` | Generate `az` CLI commands from plain English |
+| `extension_cli_install` | Install instructions for az / azd / func CLIs |
+| `bicepschema` | Bicep schema lookup and IaC generation |
+| `azureterraform` | Terraform provider docs, AVM modules |
+| `get_azure_bestpractices` | Best practices for Azure code/deploy (call first) |
+| `documentation` | Search Microsoft Learn docs |
+
+## Tier 4 — Specialized (use when needed)
+
+`acr` · `adme` · `advisor` · `appconfig` · `appservice` · `azurebackup` · `azuremigrate` · `azureterraformbestpractices` · `cloudarchitect` · `communication` · `confidentialledger` · `cosmos` · `deviceregistry` · `eventgrid` · `extension_azqr` · `fileshares` · `foundry` · `foundryextensions` · `functionapp` · `functions` · `grafana` · `insights` · `iothub` · `iotoperations` · `kusto` · `loadtesting` · `managedlustre` · `marketplace` · `mysql` · `optimization` · `policy` · `postgres` · `pricing` · `quota` · `resilience` · `role` · `search` · `servicefabric` · `signalr` · `speech` · `sreagent` · `storagesync` · `virtualdesktop` · `wellarchitectedframework` · `workbooks`
+
+## Tips
+
+- **Always start with** `subscription_list` if you don't know the subscription context.
+- **For any broken resource**, try `applens` first — it runs AI diagnostics and suggests a fix.
+- **To explore sub-commands**, pass `learn: true` to any tool.
+- **Querying logs** → `monitor` (not `applicationinsights` — that only lists components).
+- **Auth**: uses your `az login` session automatically. Run `az login` if a tool returns auth errors.
